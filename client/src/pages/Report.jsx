@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Send, MapPin, AlertTriangle } from 'lucide-react';
+import axios from 'axios';
 import logo from '../assets/GreenAlert Logo.png';
 
 export default function Report() {
@@ -45,33 +46,23 @@ export default function Report() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/reports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          description,
-          location,
-          category,
-          priority,
-          imageUrl: imageUrl || 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?q=80&w=600&auto=format&fit=crop',
-          latitude: 6.5244, // Default Lagos coords
-          longitude: 3.3792
-        }),
+      const response = await axios.post('/api/reports', {
+        title,
+        description,
+        location,
+        category,
+        priority,
+        imageUrl: imageUrl || 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?q=80&w=600&auto=format&fit=crop',
+        latitude: 6.5244, // Default Lagos coords
+        longitude: 3.3792
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to submit report');
-      }
 
       setSuccess(true);
       setTimeout(() => {
         navigate('/citizen-dashboard');
       }, 2000);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Failed to submit report');
     } finally {
       setIsLoading(false);
     }

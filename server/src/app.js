@@ -52,7 +52,12 @@ app.use(cors({
     if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
       return callback(null, true);
     }
-    const allowed = [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174'];
+    const allowed = [
+      process.env.CLIENT_URL,
+      'https://greenalert001.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:5174'
+    ];
     if (allowed.includes(origin)) {
       return callback(null, true);
     }
