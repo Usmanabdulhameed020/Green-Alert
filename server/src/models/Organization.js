@@ -46,6 +46,9 @@ const organizationSchema = new mongoose.Schema(
     licenseNumber: {
       type: String,
     },
+    licenseDocument: {
+      type: String,
+    },
     verified: {
       type: Boolean,
       default: false,

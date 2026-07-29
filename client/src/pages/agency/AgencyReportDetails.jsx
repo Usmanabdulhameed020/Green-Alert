@@ -406,8 +406,8 @@ export default function AgencyReportDetails() {
             className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md space-y-5"
           >
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200">
-                <ShieldCheck className="h-5 w-5 text-emerald-600" />
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 border border-amber-200">
+                <ShieldCheck className="h-5 w-5 text-amber-600" />
               </span>
               <div>
                 <h3 className="font-extrabold text-slate-900">Resolution Proof Required</h3>
@@ -479,7 +479,7 @@ export default function AgencyReportDetails() {
               <button
                 onClick={() => submitStatusChange(pendingStatus, resolutionImages, resolutionNotes)}
                 disabled={savingStatus}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold cursor-pointer transition-colors disabled:opacity-70 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold cursor-pointer transition-colors disabled:opacity-70 flex items-center justify-center gap-1.5"
               >
                 {savingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
                 Confirm {pendingStatus}

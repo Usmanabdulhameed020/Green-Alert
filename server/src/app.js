@@ -10,6 +10,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const healthRoutes = require('./routes/health.routes');
 const authRoutes = require('./routes/auth.routes');
+const authGoogleRoutes = require('./routes/auth.google.routes');
 const reportRoutes = require('./routes/report.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const uploadRoutes = require('./routes/upload.routes');
@@ -90,6 +91,7 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 
 // REST Router registration
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', authGoogleRoutes);
 app.use('/api/v1', healthRoutes);
 
 // Register report & notification routes on both /api and /api/v1 for reliability

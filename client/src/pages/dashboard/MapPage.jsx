@@ -122,7 +122,7 @@ export default function MapPage() {
               }`}
             >
               <Filter className="h-3.5 w-3.5" />
-              Filters
+              <span className="hidden sm:inline">Filters</span>
               {hasFilters && <span className="w-4 h-4 bg-white/20 rounded-full text-[9px] flex items-center justify-center">{selectedCategories.length + selectedStatuses.length}</span>}
             </button>
           </div>

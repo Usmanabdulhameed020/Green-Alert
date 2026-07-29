@@ -213,10 +213,10 @@ export default function AIChatBot() {
   const HeaderIcon = theme.botIcon;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] no-print font-sans">
+    <div className="fixed bottom-20 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-[9999] no-print font-sans flex flex-col items-end">
       {/* Floating Chat Modal */}
       {isOpen && (
-        <div className="mb-4 w-[90vw] sm:w-[390px] h-[540px] bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
+        <div className="mb-3 w-full sm:w-[390px] h-[75vh] sm:h-[540px] bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
           {/* Header */}
           <div className={`bg-gradient-to-r ${theme.gradient} p-4 text-white flex items-center justify-between shadow-md`}>
             <div className="flex items-center gap-3">

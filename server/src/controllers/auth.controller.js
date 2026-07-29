@@ -9,6 +9,7 @@ const emailService = require('../services/email.service');
 const achievementsConfig = require('../config/achievements');
 const { checkAndUnlockAchievements } = require('../services/gamification.service');
 const { Settings } = require('../models/Settings');
+const { cloudinary } = require('../config/cloudinary');
 
 const signToken = (user) => {
   return jwt.sign(
@@ -256,6 +257,27 @@ exports.registerOrg = async (req, res) => {
       return res.status(409).json({ success: false, message: 'Organization name already registered' });
     }
 
+    let licenseDocumentUrl = '';
+    if (req.file) {
+      try {
+        licenseDocumentUrl = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'greenalert/licenses',
+              resource_type: 'auto',
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result.secure_url);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
+      } catch (uploadError) {
+        logger.error('License document upload error:', uploadError);
+      }
+    }
+
     const user = await User.create({
       fullName: orgName,
       email,
@@ -273,6 +295,7 @@ exports.registerOrg = async (req, res) => {
       website: website || '',
       category,
       licenseNumber: licenseNumber || '',
+      licenseDocument: licenseDocumentUrl,
       verified: false,
       status: 'Inactive',
       user: user._id,

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenAlert - Mobile Device Testing</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f8fafc; padding: 20px; }
+    .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1400px; margin: 0 auto; }
+    .device-frame { background: #1e293b; border-radius: 24px; padding: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; }
+    .device-frame::before { content: ''; position: absolute; top: 4px; left: 50%; transform: translateX(-50%); width: 60px; height: 4px; background: #334155; border-radius: 2px; }
+    .device-screen { background: white; border-radius: 16px; overflow: hidden; position: relative; }
+    .device-label { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+    iframe { width: 100%; height: 100%; border: none; border-radius: 16px; }
+    .device-info { padding: 12px 16px; background: #0f172a; color: #94a3b8; font-size: 11px; display: flex; justify-content: space-between; }
+    .qr-code { width: 80px; height: 80px; }
+    h1 { text-align: center; margin-bottom: 32px; color: #0f172a; }
+    .url-input { width: 100%; max-width: 600px; margin: 0 auto 32px; display: block; padding: 12px 16px; font-size: 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
+    .url-input:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
+    .devices { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    @media (max-width: 640px) { .devices { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <h1>📱 GreenAlert Mobile Device Testing</h1>
+  <input type="url" class="url-input" id="baseUrl" placeholder="Enter your dev server URL (e.g., http://localhost:5173)" value="http://localhost:5173">
+  
+  <div class="devices" id="devices"></div>
+
+  <script>
+    const devices = [
+      { name: 'iPhone SE (375x667)', width: 375, height: 667, ua: 'iPhone' },
+      { name: 'iPhone 14 (390x844)', width: 390, height: 844, ua: 'iPhone' },
+      { name: 'iPhone 14 Pro Max (430x932)', width: 430, height: 932, ua: 'iPhone' },
+      { name: 'Galaxy S23 (360x780)', width: 360, height: 780, ua: 'Android' },
+      { name: 'Galaxy S23 Ultra (393x851)', width: 393, height: 851, ua: 'Android' },
+      { name: 'Pixel 7 (412x915)', width: 412, height: 915, ua: 'Android' },
+      { name: 'iPad Mini (768x1024)', width: 768, height: 1024, ua: 'iPad' },
+      { name: 'iPad Pro 12.9" (1024x1366)', width: 1024, height: 1366, ua: 'iPad' },
+      { name: 'Surface Duo (540x720)', width: 540, height: 720, ua: 'Android' },
+      { name: 'Galaxy Z Fold 4 (653x754 folded)', width: 653, height: 754, ua: 'Android' },
+    ];
+
+    const baseUrl = document.getElementById('baseUrl');
+    const container = document.getElementById('devices');
+
+    function renderDevices() {
+      const url = baseUrl.value || 'http://localhost:5173';
+      container.innerHTML = devices.map(d => `
+        <div class="device-frame">
+          <span class="device-label">${d.name}</span>
+          <div class="device-screen" style="width:${d.width}px;height:${d.height}px;">
+            <iframe src="${url}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+          </div>
+          <div class="device-info">
+            <span>${d.width} × ${d.height} @ ${Math.round(window.devicePixelRatio * 100) / 100}x</span>
+            <span>${d.ua}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    baseUrl.addEventListener('change', renderDevices);
+    renderDevices();
+  </script>
+</body>
+</html>

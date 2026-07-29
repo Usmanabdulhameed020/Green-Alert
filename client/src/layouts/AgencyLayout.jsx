@@ -3,11 +3,12 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, ClipboardList, Settings, LogOut, Menu,
-  Bell, CheckCheck, Trash2, BarChart3,
+  Bell, CheckCheck, Trash2, BarChart3, Download, Smartphone, X,
 } from 'lucide-react';
 import { useCitizen } from '../contexts/CitizenContext';
 import { useSocket } from '../contexts/SocketContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import usePWAInstall from '../hooks/usePWAInstall';
 import logo from '../assets/GreenAlert Logo.png';
 import AnnouncementBanner from '../components/ui/AnnouncementBanner';
 import axios from 'axios';
@@ -29,6 +30,20 @@ export default function AgencyLayout() {
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
   const headers = { Authorization: `Bearer ${token}` };
+  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
+  const [installBannerDismissed, setInstallBannerDismissed] = useState(() =>
+    localStorage.getItem('ga_install_banner_dismissed') === 'true'
+  );
+
+  const handleInstall = async () => {
+    const accepted = await promptInstall();
+    if (accepted) setInstallBannerDismissed(true);
+  };
+
+  const dismissInstallBanner = () => {
+    setInstallBannerDismissed(true);
+    localStorage.setItem('ga_install_banner_dismissed', 'true');
+  };
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -213,6 +228,27 @@ export default function AgencyLayout() {
         </header>
 
         <AnnouncementBanner theme="agency" />
+
+        {/* Mobile PWA Install Banner */}
+        <AnimatePresence>
+          {isInstallable && !isInstalled && !installBannerDismissed && (
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.3 }}
+              className="lg:hidden mx-4 mt-3 flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-2xl shadow-lg"
+            >
+              <Smartphone className="h-5 w-5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold leading-tight">Install GreenAlert</p>
+                <p className="text-xs text-blue-100 truncate">Add to home screen for the best experience</p>
+              </div>
+              <button onClick={handleInstall} className="shrink-0 px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-50 transition-colors cursor-pointer">Install</button>
+              <button onClick={dismissInstallBanner} aria-label="Dismiss" className="shrink-0 p-1 text-blue-100 hover:text-white cursor-pointer"><X className="h-4 w-4" /></button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <Outlet />

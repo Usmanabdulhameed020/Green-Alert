@@ -18,11 +18,14 @@ import {
   X,
   ChevronDown,
   Wrench,
+  Download,
+  Smartphone,
 } from 'lucide-react';
 import { useCitizen } from '../contexts/CitizenContext';
 import { useSocket } from '../contexts/SocketContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import useMaintenance from '../hooks/useMaintenance';
+import usePWAInstall from '../hooks/usePWAInstall';
 import AnnouncementBanner from '../components/ui/AnnouncementBanner';
 import logo from '../assets/GreenAlert Logo.png';
 
@@ -55,6 +58,10 @@ export default function DashboardLayout() {
   const { sendNotification } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
+  const [installBannerDismissed, setInstallBannerDismissed] = useState(() =>
+    localStorage.getItem('ga_install_banner_dismissed') === 'true'
+  );
 
   // Fallback to localStorage for user data to handle first-load timing after login
   const user = React.useMemo(() => {
@@ -68,6 +75,16 @@ export default function DashboardLayout() {
   }, [contextUser]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+  const handleInstall = async () => {
+    const accepted = await promptInstall();
+    if (accepted) setInstallBannerDismissed(true);
+  };
+
+  const dismissInstallBanner = () => {
+    setInstallBannerDismissed(true);
+    localStorage.setItem('ga_install_banner_dismissed', 'true');
+  };
 
   // Close mobile menu and profile dropdown on navigate
   useEffect(() => {
@@ -165,6 +182,16 @@ export default function DashboardLayout() {
               <p className="text-xs text-slate-500 uppercase tracking-wider font-bold">{user?.role || 'Citizen'}</p>
             </div>
           </div>
+          {/* PWA Install Button — sidebar desktop */}
+          {isInstallable && !isInstalled && (
+            <button
+              onClick={handleInstall}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:text-white bg-emerald-50 hover:bg-emerald-600 border border-emerald-200 hover:border-emerald-600 rounded-xl transition-all cursor-pointer mb-2 group"
+            >
+              <Download className="h-4 w-4 text-emerald-500 group-hover:text-white" />
+              Install App
+            </button>
+          )}
           <button
             onClick={() => {
               logout();
@@ -286,6 +313,38 @@ export default function DashboardLayout() {
 
         {/* Global Announcement Banner */}
         <AnnouncementBanner theme="citizen" />
+
+        {/* Mobile PWA Install Banner */}
+        <AnimatePresence>
+          {isInstallable && !isInstalled && !installBannerDismissed && (
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.3 }}
+              className="lg:hidden mx-4 mt-3 flex items-center gap-3 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-lg"
+            >
+              <Smartphone className="h-5 w-5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold leading-tight">Install GreenAlert</p>
+                <p className="text-xs text-emerald-100 truncate">Add to home screen for the best experience</p>
+              </div>
+              <button
+                onClick={handleInstall}
+                className="shrink-0 px-3 py-1.5 bg-white text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-50 transition-colors cursor-pointer"
+              >
+                Install
+              </button>
+              <button
+                onClick={dismissInstallBanner}
+                aria-label="Dismiss install banner"
+                className="shrink-0 p-1 text-emerald-100 hover:text-white cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Scrollable Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto overflow-y-auto">

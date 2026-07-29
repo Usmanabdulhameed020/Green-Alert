@@ -191,7 +191,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         
         {/* Left Tabs Menu */}
-        <div className="space-y-1.5 md:col-span-1">
+        <div className="flex md:flex-col overflow-x-auto md:overflow-x-visible pb-3 md:pb-0 gap-2 md:space-y-1.5 md:col-span-1 scrollbar-none whitespace-nowrap">
           {[
             { id: 'account', label: 'Profile Info', icon: User },
             { id: 'security', label: 'Security', icon: KeyRound },
@@ -203,9 +203,9 @@ export default function SettingsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-left text-xs font-bold uppercase tracking-wider cursor-pointer ${
+                className={`flex-shrink-0 md:w-full flex items-center gap-2.5 px-4 py-3 rounded-2xl transition-all text-xs font-bold uppercase tracking-wider cursor-pointer ${
                   activeTab === tab.id
-                    ? 'bg-emerald-50 text-emerald-700 shadow-sm border-l-4 border-emerald-600'
+                    ? 'bg-emerald-50 text-emerald-700 shadow-sm border-b-2 md:border-b-0 md:border-l-4 border-emerald-600'
                     : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50'
                 }`}
               >

@@ -1,9 +1,22 @@
 const express = require('express');
+const multer = require('multer');
 const { register, login, logout, getMe, updateProfile, deleteAccount, registerOrg, requestPasswordChangeCode, verifyPasswordChangeCode, changePassword, getLeaderboard, checkAchievements, sendVerificationEmail: sendVerification, verifyEmail } = require('../controllers/auth.controller');
 const { registerValidation, loginValidation } = require('../validators/auth.validator');
 const { protect } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files and PDFs are allowed'), false);
+    }
+  }
+});
 
 /**
  * @swagger
@@ -58,7 +71,7 @@ router.post('/login', loginValidation, login);
  *       200: { description: Logout successful }
  */
 router.post('/logout', logout);
-router.post('/register-org', registerOrg);
+router.post('/register-org', upload.single('licenseDocument'), registerOrg);
 /**
  * @swagger
  * /api/v1/auth/me:

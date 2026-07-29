@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:host": "vite --host",
+    "dev:lan": "vite --host 0.0.0.0 --port 5173",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:host": "vite preview --host",
+    "test:mobile": "npx serve -l 5173 -s dist"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.2",

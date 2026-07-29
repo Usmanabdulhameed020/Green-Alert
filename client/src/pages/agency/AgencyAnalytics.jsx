@@ -62,7 +62,7 @@ export default function AgencyAnalytics() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-amber-500 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -103,7 +103,7 @@ export default function AgencyAnalytics() {
 
       {/* Avg Resolution Time */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-        className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-sm"
+        className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-sm"
       >
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
@@ -111,7 +111,7 @@ export default function AgencyAnalytics() {
           </div>
           <div>
             <p className="text-2xl font-extrabold">{analytics.averageResolutionTime} days</p>
-            <p className="text-xs font-semibold text-emerald-100">Average Resolution Time</p>
+            <p className="text-xs font-semibold text-amber-100">Average Resolution Time</p>
           </div>
         </div>
       </motion.div>
@@ -123,7 +123,7 @@ export default function AgencyAnalytics() {
           className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"
         >
           <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="h-4 w-4 text-emerald-500" />
+            <BarChart3 className="h-4 w-4 text-amber-500" />
             <h2 className="text-sm font-extrabold text-slate-800">Reports by Category</h2>
           </div>
           {categoryEntries.length > 0 ? (
@@ -155,7 +155,7 @@ export default function AgencyAnalytics() {
           className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"
         >
           <div className="flex items-center gap-2 mb-4">
-            <Calendar className="h-4 w-4 text-emerald-500" />
+            <Calendar className="h-4 w-4 text-amber-500" />
             <h2 className="text-sm font-extrabold text-slate-800">Reports by Month</h2>
           </div>
           <div className="flex items-end gap-2 h-48">
@@ -176,7 +176,7 @@ export default function AgencyAnalytics() {
                       initial={{ height: 0 }}
                       animate={{ height: `${(item.resolved / maxMonth) * 100}%` }}
                       transition={{ duration: 0.5, delay: 0.35 + i * 0.05 }}
-                      className="w-full bg-emerald-400 rounded-t-sm min-h-[2px]"
+                      className="w-full bg-amber-600 rounded-t-sm min-h-[2px]"
                       title={`Resolved: ${item.resolved}`}
                     />
                   </div>
@@ -191,7 +191,7 @@ export default function AgencyAnalytics() {
               <span className="text-[10px] font-bold text-slate-500">Created</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-sm bg-emerald-400" />
+              <div className="h-2.5 w-2.5 rounded-sm bg-amber-600" />
               <span className="text-[10px] font-bold text-slate-500">Resolved</span>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function AgencyAnalytics() {
         className="bg-white rounded-2xl border border-slate-200 shadow-sm"
       >
         <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
-          <Activity className="h-4 w-4 text-emerald-500" />
+          <Activity className="h-4 w-4 text-amber-500" />
           <h2 className="text-sm font-extrabold text-slate-800">Recent Activity</h2>
         </div>
         <div className="divide-y divide-slate-100">
