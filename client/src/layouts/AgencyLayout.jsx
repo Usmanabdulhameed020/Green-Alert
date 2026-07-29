@@ -106,10 +106,10 @@ export default function AgencyLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="h-screen overflow-hidden bg-slate-50 flex">
       {sidebarOpen && <div className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed lg:relative top-0 left-0 z-50 h-full w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 shrink-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="p-5 border-b border-slate-200">
           <div className="flex items-center gap-2.5">
             <img src={logo} alt="GreenAlert logo" className="h-9 w-9 rounded-lg object-cover" />
@@ -158,7 +158,7 @@ export default function AgencyLayout() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 cursor-pointer">
             <Menu className="h-5 w-5" />
