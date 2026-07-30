@@ -1,10 +1,12 @@
 const express = require('express');
 const multer = require('multer');
-const { register, login, logout, getMe, updateProfile, deleteAccount, registerOrg, requestPasswordChangeCode, verifyPasswordChangeCode, changePassword, getLeaderboard, checkAchievements, sendVerificationEmail: sendVerification, verifyEmail } = require('../controllers/auth.controller');
+const { register, login, logout, getMe, updateProfile, deleteAccount, registerOrg, requestPasswordChangeCode, verifyPasswordChangeCode, changePassword, getLeaderboard, checkAchievements, sendVerificationEmail: sendVerification, verifyEmail, checkEmail } = require('../controllers/auth.controller');
 const { registerValidation, loginValidation } = require('../validators/auth.validator');
 const { protect } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
+
+router.post('/check-email', checkEmail);
 
 const upload = multer({
   storage: multer.memoryStorage(),

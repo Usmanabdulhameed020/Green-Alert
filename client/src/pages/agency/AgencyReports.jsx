@@ -45,7 +45,7 @@ export default function AgencyReports() {
     }
   };
 
-  useEffect(() => { fetchReports(); }, [token, user]);
+  useEffect(() => { fetchReports(); }, [token, user?._id]);
 
   useEffect(() => {
     if (!on) return;

@@ -68,7 +68,7 @@ export default function AgencyLayout() {
       });
     });
     return () => off();
-  }, [on]);
+  }, [on, sendNotification]);
 
   useEffect(() => {
     const handleClick = (e) => {

@@ -1,7 +1,7 @@
 import { useCitizen } from '../contexts/CitizenContext';
 
 export function useAuth() {
-  const { user, logout, login, register, loading, token } = useCitizen();
+  const { user, logout, token } = useCitizen();
   return {
     user,
     isAuthenticated: !!user,
@@ -9,9 +9,7 @@ export function useAuth() {
     isAgency: user?.role === 'agency',
     isCitizen: user?.role === 'citizen',
     logout,
-    login,
-    register,
-    loading,
     token,
   };
 }
+

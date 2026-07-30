@@ -88,6 +88,29 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.checkEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide an email' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const [existingUser, existingOrg] = await Promise.all([
+      User.findOne({ email: cleanEmail }),
+      Organization.findOne({ email: cleanEmail }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      exists: !!(existingUser || existingOrg),
+    });
+  } catch (error) {
+    logger.error('Check email error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
 exports.login = async (req, res) => {
   try {
     const errors = validationResult(req);

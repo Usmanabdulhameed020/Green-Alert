@@ -1,4 +1,5 @@
 import React, { Suspense, lazy } from 'react';
+import ProtectedRoute from './components/ui/ProtectedRoute';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './contexts/ToastContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -48,7 +49,7 @@ const AgencyReports = lazy(() => import('./pages/agency/AgencyReports'));
 const AgencyReportDetails = lazy(() => import('./pages/agency/AgencyReportDetails'));
 const AgencySettings = lazy(() => import('./pages/agency/AgencySettings'));
 const AgencyAnalytics = lazy(() => import('./pages/agency/AgencyAnalytics'));
-const ProtectedRoute = lazy(() => import('./components/ui/ProtectedRoute'));
+// ProtectedRoute is imported eagerly above — it must not be lazy
 // Auth pages
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Terms = lazy(() => import('./pages/Terms'));

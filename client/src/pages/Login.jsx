@@ -13,8 +13,6 @@ const API_URL = BASE ? `${BASE}/api/v1` : '/api/v1';
 
 export default function Login() {
   const { setUser, setToken, user } = useCitizen();
-  if (user) return <Navigate to={user.role === 'admin' ? '/admin' : user.role === 'agency' ? '/agency' : '/citizen-dashboard'} replace />;
-
   const [step, setStep] = useState('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,6 +22,8 @@ export default function Login() {
   const [maintenance, setMaintenance] = useState(null);
   const navigate = useNavigate();
 
+  if (user) return <Navigate to={user.role === 'admin' ? '/admin' : user.role === 'agency' ? '/agency' : '/citizen-dashboard'} replace />;
+
   useEffect(() => {
     fetch(`${API_URL}/system/settings`)
       .then(r => r.json())
@@ -31,9 +31,35 @@ export default function Login() {
       .catch(() => {});
   }, []);
 
-  const handleEmailSubmit = (submittedEmail) => {
+  const handleEmailSubmit = async (submittedEmail) => {
     setEmail(submittedEmail);
-    setStep('password');
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/auth/check-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: submittedEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to verify email');
+      }
+
+      if (!data.exists) {
+        setError('No account found with this email address. Please create an account first.');
+        return;
+      }
+
+      setStep('password');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePasswordSubmit = async (e) => {
@@ -141,7 +167,7 @@ export default function Login() {
         </div>
       )}
 
-      {error && step === 'password' && (
+      {error && (
         <div className="mb-5 p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />
           {error}

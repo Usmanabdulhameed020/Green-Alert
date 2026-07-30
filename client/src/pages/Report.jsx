@@ -46,7 +46,7 @@ export default function Report() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('/api/reports', {
+      const response = await axios.post('/api/v1/reports', {
         title,
         description,
         location,

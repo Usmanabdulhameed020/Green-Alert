@@ -94,11 +94,11 @@ export default function AdminSettings() {
     const fetchSystemSettings = async () => {
       try {
         const { data } = await axios.get('/api/v1/system/settings');
-        if (data) {
-          setMaintenanceMode(data.maintenanceMode || false);
-          if (data.maintenanceMessage) setMaintenanceMessage(data.maintenanceMessage);
-          setAnnouncementEnabled(data.announcementEnabled || false);
-          if (data.announcementMessage) setAnnouncementMessage(data.announcementMessage);
+        if (data?.success && data.data) {
+          setMaintenanceMode(data.data.maintenanceMode || false);
+          if (data.data.maintenanceMessage) setMaintenanceMessage(data.data.maintenanceMessage);
+          setAnnouncementEnabled(data.data.announcementEnabled || false);
+          if (data.data.announcementMessage) setAnnouncementMessage(data.data.announcementMessage);
         }
       } catch (err) {
         console.error('Failed to load system settings:', err);
@@ -130,7 +130,7 @@ export default function AdminSettings() {
     try {
       const fd = new FormData();
       fd.append('images', file);
-      const res = await axios.post('/api/upload', fd, {
+      const res = await axios.post('/api/v1/upload', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       if (res.data?.success) {

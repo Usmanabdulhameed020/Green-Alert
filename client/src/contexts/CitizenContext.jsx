@@ -164,6 +164,13 @@ export const CitizenProvider = ({ children }) => {
     setSettings(null);
   };
 
+  // Persist XP to server
+  const saveXP = async (newXP) => {
+    try {
+      await axios.patch('/api/v1/auth/me', { xp: newXP });
+    } catch {}
+  };
+
   // Fetch reports & notifications once user is authenticated
   useEffect(() => {
     if (!user) return;
@@ -172,8 +179,8 @@ export const CitizenProvider = ({ children }) => {
       setIsLoading(true);
       try {
         const [reportsRes, notificationsRes] = await Promise.all([
-          axios.get('/api/reports/my-reports').catch(() => ({ data: [] })),
-          axios.get('/api/notifications').catch(() => ({ data: [] }))
+          axios.get('/api/v1/reports/my-reports').catch(() => ({ data: [] })),
+          axios.get('/api/v1/notifications').catch(() => ({ data: [] }))
         ]);
 
         const fetchedReports = Array.isArray(reportsRes.data) ? reportsRes.data : [];
@@ -205,13 +212,6 @@ export const CitizenProvider = ({ children }) => {
 
     loadData();
   }, [user]);
-
-  // Persist XP to server
-  const saveXP = async (newXP) => {
-    try {
-      await axios.patch('/api/v1/auth/me', { xp: newXP });
-    } catch {}
-  };
 
   // Fetch leaderboard
   const fetchLeaderboard = useCallback(async () => {
@@ -263,7 +263,7 @@ export const CitizenProvider = ({ children }) => {
   // Delete a report
   const deleteReport = async (reportId) => {
     try {
-      await axios.delete(`/api/reports/${reportId}`);
+      await axios.delete(`/api/v1/reports/${reportId}`);
       setReports(prev => prev.filter(r => (r.id || r._id) !== reportId));
       setSavedReports(prev => prev.filter(id => id !== reportId));
       setPoints(prev => Math.max(0, prev - 20));
@@ -277,7 +277,7 @@ export const CitizenProvider = ({ children }) => {
   // Fetch all community reports
   const fetchAllReports = async () => {
     try {
-      const res = await axios.get('/api/reports');
+      const res = await axios.get('/api/v1/reports');
       if (Array.isArray(res.data)) {
         setAllReports(res.data);
       }
@@ -289,7 +289,7 @@ export const CitizenProvider = ({ children }) => {
   // Fetch all communities
   const fetchCommunities = async () => {
     try {
-      const res = await axios.get('/api/communities');
+      const res = await axios.get('/api/v1/communities');
       if (Array.isArray(res.data)) {
         setCommunities(res.data);
       }
@@ -301,7 +301,7 @@ export const CitizenProvider = ({ children }) => {
   // Create a community
   const createCommunity = async (name, description) => {
     try {
-      const res = await axios.post('/api/communities', { name, description });
+      const res = await axios.post('/api/v1/communities', { name, description });
       setCommunities(prev => [res.data, ...prev]);
       return res.data;
     } catch (err) {
@@ -313,7 +313,7 @@ export const CitizenProvider = ({ children }) => {
   // Join a community
   const joinCommunity = async (communityId) => {
     try {
-      const res = await axios.post(`/api/communities/${communityId}/join`);
+      const res = await axios.post(`/api/v1/communities/${communityId}/join`);
       setCommunities(prev => prev.map(c =>
         (c._id || c.id) === communityId ? res.data : c
       ));
@@ -326,7 +326,7 @@ export const CitizenProvider = ({ children }) => {
   // Leave a community
   const leaveCommunity = async (communityId) => {
     try {
-      const res = await axios.post(`/api/communities/${communityId}/leave`);
+      const res = await axios.post(`/api/v1/communities/${communityId}/leave`);
       setCommunities(prev => prev.map(c =>
         (c._id || c.id) === communityId ? res.data : c
       ));
@@ -339,7 +339,7 @@ export const CitizenProvider = ({ children }) => {
   // Update a community (creator only)
   const updateCommunity = async (communityId, updates) => {
     try {
-      const res = await axios.patch(`/api/communities/${communityId}`, updates);
+      const res = await axios.patch(`/api/v1/communities/${communityId}`, updates);
       setCommunities(prev => prev.map(c =>
         (c._id || c.id) === communityId ? res.data : c
       ));
@@ -355,7 +355,7 @@ export const CitizenProvider = ({ children }) => {
 
   const fetchPolls = async (communityId) => {
     try {
-      const res = await axios.get(`/api/polls/community/${communityId}`);
+      const res = await axios.get(`/api/v1/polls/community/${communityId}`);
       if (Array.isArray(res.data)) setPolls(res.data);
     } catch (err) {
       console.error('Failed to fetch polls:', err);
@@ -364,7 +364,7 @@ export const CitizenProvider = ({ children }) => {
 
   const createPoll = async (communityId, question, options) => {
     try {
-      const res = await axios.post(`/api/polls/community/${communityId}`, { question, options });
+      const res = await axios.post(`/api/v1/polls/community/${communityId}`, { question, options });
       setPolls(prev => [res.data, ...prev]);
       return res.data;
     } catch (err) {
@@ -375,7 +375,7 @@ export const CitizenProvider = ({ children }) => {
 
   const votePoll = async (pollId, optionIndex) => {
     try {
-      const res = await axios.post(`/api/polls/${pollId}/vote`, { optionIndex });
+      const res = await axios.post(`/api/v1/polls/${pollId}/vote`, { optionIndex });
       setPolls(prev => prev.map(p => (p._id || p.id) === pollId ? res.data : p));
       return res.data;
     } catch (err) {
@@ -387,7 +387,7 @@ export const CitizenProvider = ({ children }) => {
   // Delete a community (creator only)
   const deleteCommunity = async (communityId) => {
     try {
-      await axios.delete(`/api/communities/${communityId}`);
+      await axios.delete(`/api/v1/communities/${communityId}`);
       setCommunities(prev => prev.filter(c => (c._id || c.id) !== communityId));
     } catch (err) {
       console.error('Failed to delete community:', err);
@@ -398,7 +398,7 @@ export const CitizenProvider = ({ children }) => {
   // Create a new report
   const createReport = async (reportData) => {
     try {
-      const res = await axios.post('/api/reports', reportData);
+      const res = await axios.post('/api/v1/reports', reportData);
       const newReport = res.data;
       
       setReports(prev => [newReport, ...prev]);
@@ -411,10 +411,12 @@ export const CitizenProvider = ({ children }) => {
         report: newReport._id || newReport.id
       });
       
-      // Increment points for report submission
-      const newPoints = points + 20;
-      setPoints(newPoints);
-      await saveXP(newPoints);
+      // Increment points using functional update to avoid stale closure
+      setPoints(prev => {
+        const newPoints = prev + 20;
+        saveXP(newPoints);
+        return newPoints;
+      });
       await checkAchievements();
       return newReport;
     } catch (err) {
@@ -442,7 +444,7 @@ export const CitizenProvider = ({ children }) => {
   // Fetch a single report by ID (loads live comments/status changes)
   const getReportDetails = async (reportId) => {
     try {
-      const res = await axios.get(`/api/reports/${reportId}`);
+      const res = await axios.get(`/api/v1/reports/${reportId}`);
       return res.data;
     } catch (err) {
       console.error('Error fetching report details:', err);
@@ -455,7 +457,7 @@ export const CitizenProvider = ({ children }) => {
   const addComment = async (reportId, text) => {
     if (!user) return;
     try {
-      const res = await axios.post(`/api/reports/${reportId}/comments`, { text });
+      const res = await axios.post(`/api/v1/reports/${reportId}/comments`, { text });
       const comment = res.data;
 
       setReports(prev => prev.map(rep => {
@@ -490,7 +492,7 @@ export const CitizenProvider = ({ children }) => {
   // Create a Notification
   const addNotification = async ({ title, message, type, report }) => {
     try {
-      const res = await axios.post('/api/notifications', {
+      const res = await axios.post('/api/v1/notifications', {
         user: user.id || user._id,
         title,
         message,
@@ -523,7 +525,7 @@ export const CitizenProvider = ({ children }) => {
   // Mark single notification as read
   const markAsRead = async (notificationId) => {
     try {
-      await axios.patch(`/api/notifications/${notificationId}/read`);
+      await axios.patch(`/api/v1/notifications/${notificationId}/read`);
       setNotifications(prev => prev.map(n => 
         (n.id || n._id) === notificationId ? { ...n, isRead: true } : n
       ));
@@ -538,9 +540,8 @@ export const CitizenProvider = ({ children }) => {
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
-      // Simulate bulk update on API, or iterate
       await Promise.all(
-        notifications.filter(n => !n.isRead).map(n => axios.patch(`/api/notifications/${n.id || n._id}/read`).catch(() => {}))
+        notifications.filter(n => !n.isRead).map(n => axios.patch(`/api/v1/notifications/${n.id || n._id}/read`).catch(() => {}))
       );
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (err) {
@@ -552,7 +553,7 @@ export const CitizenProvider = ({ children }) => {
   const deleteNotification = async (notificationId) => {
     setNotifications(prev => prev.filter(n => (n.id || n._id) !== notificationId));
     try {
-      await axios.delete(`/api/notifications/${notificationId}`);
+      await axios.delete(`/api/v1/notifications/${notificationId}`);
     } catch (err) {
       console.error('Failed to delete notification on server:', err);
     }

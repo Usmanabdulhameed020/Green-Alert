@@ -138,7 +138,7 @@ export default function AIChatBot() {
     try {
       const storedToken = localStorage.getItem('greenalert_token');
       const headers = storedToken ? { Authorization: `Bearer ${storedToken}` } : {};
-      const res = await axios.post('/api/chat', { messages: newMessages }, { headers });
+      const res = await axios.post('/api/v1/chat', { messages: newMessages }, { headers });
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: res.data.reply }

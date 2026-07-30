@@ -225,7 +225,7 @@ export default function CreateReport() {
         const imageData = new FormData();
         formData.images.forEach((img) => imageData.append('images', img));
 
-        const uploadRes = await axios.post('/api/upload', imageData, {
+        const uploadRes = await axios.post('/api/v1/upload', imageData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
 

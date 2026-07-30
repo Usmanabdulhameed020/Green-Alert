@@ -28,9 +28,35 @@ export default function Signup() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const handleEmailSubmit = (submittedEmail) => {
+  const handleEmailSubmit = async (submittedEmail) => {
     setEmail(submittedEmail);
-    setStep('signup');
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/auth/check-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: submittedEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to verify email');
+      }
+
+      if (data.exists) {
+        setError('An account with this email already exists. Please sign in instead.');
+        return;
+      }
+
+      setStep('signup');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignup = async (e) => {

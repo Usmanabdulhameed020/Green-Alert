@@ -37,7 +37,7 @@ export default function AgencySettings() {
     try {
       const formData = new FormData();
       formData.append('images', file);
-      const res = await axios.post('/api/upload', formData, {
+      const res = await axios.post('/api/v1/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
       });
       if (res.data?.success) {
