@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sparkles, Brain, CopyMinus, ShieldAlert, GitBranch, FileText } from 'lucide-react';
 
@@ -138,12 +139,12 @@ export default function AISection() {
                   </p>
                 </div>
               </div>
-              <a 
-                href="#partners"
+              <Link
+                to="/signup"
                 className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl whitespace-nowrap shadow-md transition-all self-start sm:self-center inline-flex items-center"
               >
                 Learn AI Pipeline
-              </a>
+              </Link>
             </motion.div>
           </motion.div>
 

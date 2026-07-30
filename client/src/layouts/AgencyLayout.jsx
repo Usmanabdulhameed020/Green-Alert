@@ -11,6 +11,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import usePWAInstall from '../hooks/usePWAInstall';
 import logo from '../assets/GreenAlert Logo.png';
 import AnnouncementBanner from '../components/ui/AnnouncementBanner';
+import { useConfirm } from '../components/ui/ConfirmModal';
 import axios from 'axios';
 
 const navItems = [
@@ -100,7 +101,11 @@ export default function AgencyLayout() {
     } catch {}
   };
 
-  const handleLogout = () => {
+  const { confirm, ConfirmDialog } = useConfirm();
+
+  const handleLogout = async () => {
+    const confirmed = await confirm('Are you sure you want to sign out?');
+    if (!confirmed) return;
     logout();
     navigate('/login');
   };
@@ -254,6 +259,7 @@ export default function AgencyLayout() {
           <Outlet />
         </main>
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
 
@@ -36,19 +37,19 @@ export default function CTA() {
 
           {/* Action Buttons — simple anchor links */}
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-            <a
-              href="#home"
+            <Link
+              to="/login"
               className="px-8 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-emerald-950 font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-white/5 hover:translate-y-[-1px] active:translate-y-0 text-sm"
             >
               Start Reporting
               <ArrowRight className="h-4 w-4 text-emerald-900" />
-            </a>
-            <a
-              href="#partners"
+            </Link>
+            <Link
+              to="/signup"
               className="px-8 py-3.5 rounded-xl bg-transparent border border-white/25 hover:border-white/50 text-white font-bold transition-all duration-200 text-sm text-center"
             >
               Join the Community
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>

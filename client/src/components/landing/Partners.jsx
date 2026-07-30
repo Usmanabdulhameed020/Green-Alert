@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Building2, Heart, Truck, CheckCircle2, ShieldCheck, ExternalLink } from 'lucide-react';
 
@@ -126,13 +127,13 @@ export default function Partners() {
               </p>
             </div>
           </div>
-          <a 
-            href="#cta"
+          <Link
+            to="/register-org"
             className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
           >
             Request Partner Access
             <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          </Link>
         </motion.div>
       </div>
     </section>

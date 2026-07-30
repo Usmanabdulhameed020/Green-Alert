@@ -9,7 +9,6 @@ import AISection from '../components/landing/AISection';
 import Partners from '../components/landing/Partners';
 import Testimonials from '../components/landing/Testimonials';
 import CTA from '../components/landing/CTA';
-import Footer from '../components/landing/Footer';
 import SEO from '../components/SEO';
 import { ScrollProgress, BackToTop } from '../components/landing/ScrollUI';
 
@@ -33,7 +32,9 @@ export default function Home() {
         <CTA />
       </main>
 
-      <Footer />
+      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400 font-semibold">
+        &copy; {new Date().getFullYear()} GreenAlert. All rights reserved.
+      </footer>
       <BackToTop />
     </div>
   );

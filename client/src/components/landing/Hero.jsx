@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, ShieldAlert, Sparkles, UserCheck, Send } from 'lucide-react';
 
@@ -49,19 +50,11 @@ export default function Hero() {
           animate="visible"
           className="max-w-4xl mx-auto flex flex-col items-center"
         >
-          {/* Badge */}
-          <motion.div
-            variants={itemVariants}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-6 shadow-sm"
-          >
-            <ShieldAlert className="h-3.5 w-3.5 text-emerald-600" />
-            Civic Alert Network
-          </motion.div>
 
           {/* Heading */}
           <motion.h1
             variants={itemVariants}
-            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6"
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6 mt-10"
           >
             Report Environmental Issues <br className="hidden sm:inline" />
             Before They Become{' '}
@@ -84,18 +77,18 @@ export default function Hero() {
             className="flex flex-col sm:flex-row gap-4 mb-16 w-full sm:w-auto"
           >
             <a
-              href="#how-it-works"
+              href="/signup"
               className="px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/15 hover:shadow-emerald-500/25 hover:translate-y-[-1px] active:translate-y-0 text-sm"
             >
               See How It Works
               <ArrowRight className="h-5 w-5" />
             </a>
-            <a
-              href="#partners"
+            <Link
+              to="/register-org"
               className="px-8 py-3.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm text-sm"
             >
               Explore Partners
-            </a>
+            </Link>
           </motion.div>
 
           {/* Conceptual Value Pills instead of Demo Dashboard Mockup */}
