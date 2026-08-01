@@ -53,15 +53,24 @@ const mobileNavItems = [
 ];
 
 export default function DashboardLayout() {
-  const { user: contextUser, notifications, logout, addNotificationFromSocket } = useCitizen();
+  const { user: contextUser, notifications, reports, logout, addNotificationFromSocket } = useCitizen();
   const { on } = useSocket();
   const { sendNotification } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
   const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
+  const [vitalsPulse, setVitalsPulse] = useState(0);
   const [installBannerDismissed, setInstallBannerDismissed] = useState(() =>
     localStorage.getItem('ga_install_banner_dismissed') === 'true'
   );
+
+  const activeReports = reports.filter((r) => r.status !== 'Resolved' && r.status !== 'Closed').length;
+
+  // ── Planet Vitals: spike the EKG when a new report lands ──
+  useEffect(() => {
+    const offNew = on('report:new', () => setVitalsPulse((p) => p + 1));
+    return offNew;
+  }, [on]);
 
   // Fallback to localStorage for user data to handle first-load timing after login
   const user = React.useMemo(() => {
@@ -348,6 +357,36 @@ export default function DashboardLayout() {
 
         {/* Scrollable Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+          {/* ── Planet Vitals EKG strip ── */}
+          <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-white px-4 py-2 mb-5 flex items-center gap-3 shadow-sm">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+            </span>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 shrink-0">
+              Planet Vitals
+            </span>
+            <svg
+              key={vitalsPulse}
+              viewBox="0 0 220 24"
+              preserveAspectRatio="none"
+              className="flex-1 h-5 min-w-[80px] ga-vitals-spike"
+              aria-hidden
+            >
+              <path
+                d="M0 12 L18 12 L26 10 L34 12 L50 13 L56 13 L64 4 L72 20 L80 10 L88 12 L108 12 L116 10 L124 12 L140 13 L146 13 L154 4 L162 20 L170 10 L178 12 L198 12 L220 12"
+                fill="none"
+                stroke="#10b981"
+                strokeWidth={1.6}
+                strokeLinecap="round"
+                className="ga-vitals-draw"
+                style={{ filter: 'drop-shadow(0 0 3px rgba(16,185,129,0.5))' }}
+              />
+            </svg>
+            <span className="text-[10px] font-bold text-emerald-600 shrink-0 tabular-nums">
+              {activeReports} active
+            </span>
+          </div>
           <Outlet />
         </main>
       </div>

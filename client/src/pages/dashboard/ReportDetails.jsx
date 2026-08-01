@@ -25,6 +25,7 @@ import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 import ErrorState from '../../components/ui/ErrorState';
 import BeforeAfterSlider from '../../components/ui/BeforeAfterSlider';
 import PDFReportGenerator from '../../components/ui/PDFReportGenerator';
+import LeafBurst from '../../components/ui/LeafBurst';
 
 const workflowStatuses = [
   'Submitted',
@@ -34,6 +35,41 @@ const workflowStatuses = [
   'Resolved',
   'Closed',
 ];
+
+const EKG_HEIGHT = 600;
+const EKG_BEAT = 120;
+
+function buildEkgPath(width = 32, height = EKG_HEIGHT, beat = EKG_BEAT, cutY = height) {
+  const beats = Math.ceil(Math.min(cutY, height) / beat);
+  let d = `M ${width / 2} 0`;
+  for (let b = 0; b < beats; b++) {
+    const t = b * beat;
+    if (t >= cutY) break;
+    const maxT = Math.min(t + beat * 0.85, cutY);
+    d += ` L ${width / 2} ${Math.min(t + beat * 0.15, maxT)}`;
+    d += ` L ${width * 0.42} ${Math.min(t + beat * 0.25, maxT)}`;
+    d += ` L ${width / 2} ${Math.min(t + beat * 0.35, maxT)}`;
+    d += ` L ${width * 0.55} ${Math.min(t + beat * 0.5, maxT)}`;
+    d += ` L ${width * 0.55} ${Math.min(t + beat * 0.55, maxT)}`;
+    d += ` L ${width * 0.92} ${Math.min(t + beat * 0.62, maxT)}`;
+    d += ` L ${width * 0.08} ${Math.min(t + beat * 0.7, maxT)}`;
+    d += ` L ${width * 0.36} ${Math.min(t + beat * 0.78, maxT)}`;
+    d += ` L ${width / 2} ${Math.min(t + beat * 0.85, maxT)}`;
+  }
+  d += ` L ${width / 2} ${Math.min(cutY, height)}`;
+  return d;
+}
+
+function buildWavePath(width = 32, height = EKG_HEIGHT, amp = 7) {
+  const steps = 48;
+  let d = `M ${width / 2} 0`;
+  for (let i = 1; i <= steps; i++) {
+    const y = (height / steps) * i;
+    const x = width / 2 + Math.sin((i / steps) * Math.PI * 5) * amp * (1 - i / steps);
+    d += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+  }
+  return d;
+}
 
 export default function ReportDetails() {
   const { id } = useParams();
@@ -109,6 +145,8 @@ export default function ReportDetails() {
 
   const isSaved = savedReports.includes(report.id || report._id);
   const currentStatusIndex = workflowStatuses.indexOf(report.status);
+  const isResolved = report.status === 'Resolved' || report.status === 'Closed';
+  const progressCutY = Math.max(0, currentStatusIndex) / (workflowStatuses.length - 1) * EKG_HEIGHT;
 
   // Fallback coordinates for Lagos if missing
   const lat = report.latitude || 6.5244;
@@ -316,49 +354,75 @@ export default function ReportDetails() {
               Progress Workflow
             </h3>
             
-            {/* Vertical Progress Timeline */}
-            <div className="relative pl-8 space-y-6 border-l border-slate-200 ml-3.5">
-              {workflowStatuses.map((status, index) => {
-                const isCompleted = index < currentStatusIndex;
-                const isCurrent = index === currentStatusIndex;
-                const isFuture = index > currentStatusIndex;
+            {/* Vertical Progress Timeline with EKG heartbeat connector */}
+            <div className="relative pl-8 ml-3.5">
+              {/* EKG connector */}
+              <div className="absolute -left-1.5 top-1 bottom-3 w-10" aria-hidden>
+                <svg viewBox={`0 0 32 ${EKG_HEIGHT}`} preserveAspectRatio="none" className="w-full h-full">
+                  <path d={buildEkgPath()} fill="none" stroke="#e2e8f0" strokeWidth={2} strokeLinecap="round" />
+                  <path
+                    key={`${currentStatusIndex}-${isResolved}`}
+                    d={isResolved ? buildWavePath() : buildEkgPath(32, EKG_HEIGHT, EKG_BEAT, progressCutY)}
+                    fill="none"
+                    stroke={isResolved ? '#10b981' : '#059669'}
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    className="ga-ekg-draw"
+                    style={{ filter: isResolved ? 'drop-shadow(0 0 6px rgba(16,185,129,0.55))' : 'none' }}
+                  />
+                </svg>
+              </div>
 
-                return (
-                  <div key={status} className="relative">
-                    {/* Circle Node */}
-                    <div className={`absolute -left-11.5 top-0.5 w-7 h-7 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-all ${
-                      isCompleted ? 'bg-emerald-600 text-white' :
-                      isCurrent ? 'bg-white border-emerald-500 ring-2 ring-emerald-500/20 text-emerald-600 scale-105' :
-                      'bg-slate-100 border-slate-200 text-slate-400'
-                    }`}>
-                      {isCompleted ? (
-                        <CheckCircle className="h-3 w-3" />
-                      ) : (
-                        <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-emerald-600 animate-ping' : 'bg-slate-400'}`} />
-                      )}
-                    </div>
+              {/* Healing leaf burst when resolved */}
+              {isResolved && (
+                <div className="absolute bottom-1 left-0 right-0 h-20 z-10">
+                  <LeafBurst fire count={16} size="sm" />
+                </div>
+              )}
 
-                    <div className="space-y-0.5">
-                      <p className={`text-sm font-bold ${
-                        isCurrent ? 'text-emerald-700' :
-                        isCompleted ? 'text-slate-800' : 'text-slate-400'
+              <div className="relative space-y-6">
+                {workflowStatuses.map((status, index) => {
+                  const isCompleted = index < currentStatusIndex;
+                  const isCurrent = index === currentStatusIndex;
+                  const isFuture = index > currentStatusIndex;
+
+                  return (
+                    <div key={status} className="relative">
+                      {/* Circle Node */}
+                      <div className={`absolute -left-11.5 top-0.5 w-7 h-7 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-all ${
+                        isCompleted ? 'bg-emerald-600 text-white' :
+                        isCurrent ? 'bg-white border-emerald-500 ring-2 ring-emerald-500/20 text-emerald-600 scale-105' :
+                        'bg-slate-100 border-slate-200 text-slate-400'
                       }`}>
-                        {status}
-                      </p>
-                      {isCurrent && (
-                        <p className="text-[11px] text-slate-500 font-semibold">
-                          Active stage
+                        {isCompleted ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : (
+                          <div className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-emerald-600 animate-ping' : 'bg-slate-400'}`} />
+                        )}
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <p className={`text-sm font-bold ${
+                          isCurrent ? 'text-emerald-700' :
+                          isCompleted ? 'text-slate-800' : 'text-slate-400'
+                        }`}>
+                          {status}
                         </p>
-                      )}
-                      {index === 0 && (
-                        <p className="text-[10px] text-slate-400 font-medium">
-                          {report.createdAt ? new Date(report.createdAt).toLocaleDateString() : 'Unknown'}
-                        </p>
-                      )}
+                        {isCurrent && (
+                          <p className="text-[11px] text-slate-500 font-semibold">
+                            Active stage
+                          </p>
+                        )}
+                        {index === 0 && (
+                          <p className="text-[10px] text-slate-400 font-medium">
+                            {report.createdAt ? new Date(report.createdAt).toLocaleDateString() : 'Unknown'}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
 

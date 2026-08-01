@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, Waves, Compass, Wind, HardHat, Droplet, AlertTriangle, Trees } from 'lucide-react';
+import RecyclingSorterAnimation from './RecyclingSorterAnimation';
 
 export default function Categories() {
   const categories = [
@@ -95,13 +96,18 @@ export default function Categories() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[140px] pointer-events-none" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Report Categories We Monitor
-          </h2>
-          <p className="text-slate-500 text-sm sm:text-base leading-relaxed font-semibold">
-            Select from our standard reporting categories. Gemini AI automatically parses descriptions to match the appropriate municipal responder.
-          </p>
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 mb-16">
+          <div className="text-center lg:text-left max-w-2xl lg:max-w-xl">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
+              Report Categories We Monitor
+            </h2>
+            <p className="text-slate-500 text-sm sm:text-base leading-relaxed font-semibold">
+              Select from our standard reporting categories. Gemini AI automatically parses descriptions to match the appropriate municipal responder.
+            </p>
+          </div>
+          <div className="w-72 sm:w-80 lg:w-96 shrink-0" aria-hidden="true">
+            <RecyclingSorterAnimation />
+          </div>
         </div>
 
         {/* Categories Grid */}

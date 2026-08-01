@@ -3,23 +3,74 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, X, MapPin, Navigation } from 'lucide-react';
 import { useCitizen } from '../../contexts/CitizenContext';
+import { useSocket } from '../../contexts/SocketContext';
 import MapLibreMap from '../../components/map/MapLibreMap';
 import { MapSearchBar, LocateMeButton } from '../../components/map/MapControls';
 import StatusBadge from '../../components/ui/StatusBadge';
 
 const CATEGORIES = ['Air Quality', 'Water', 'Waste', 'Noise', 'Deforestation', 'Biodiversity', 'Other'];
 
+function haversineKm(a, b) {
+  const R = 6371;
+  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180;
+  const dLng = ((b.longitude - a.longitude) * Math.PI) / 180;
+  const lat1 = (a.latitude * Math.PI) / 180;
+  const lat2 = (b.latitude * Math.PI) / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function computeHotspotPairs(reports, maxKm = 8, maxPairs = 12) {
+  const pairs = [];
+  const byCat = {};
+  reports.forEach((r) => {
+    if (r.latitude && r.longitude) {
+      (byCat[r.category || 'Other'] ||= []).push(r);
+    }
+  });
+  for (const cat of Object.keys(byCat)) {
+    const list = byCat[cat];
+    for (let i = 0; i < list.length && pairs.length < maxPairs; i++) {
+      for (let j = i + 1; j < list.length && pairs.length < maxPairs; j++) {
+        if (haversineKm(list[i], list[j]) <= maxKm) pairs.push([list[i], list[j]]);
+      }
+    }
+  }
+  return pairs.slice(0, maxPairs);
+}
+
 export default function MapPage() {
   const navigate = useNavigate();
   const { allReports, fetchAllReports } = useCitizen();
+  const { on } = useSocket();
   const mapRef = useRef(null);
+  const [mapReady, setMapReady] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [arcPaths, setArcPaths] = useState([]);
 
   useEffect(() => {
     fetchAllReports();
   }, []);
+
+  // ── Living Map: react to live socket events with sonar pulses ──
+  const [pulses, setPulses] = useState([]);
+
+  const triggerPulse = useCallback((id, color = '#059669') => {
+    if (!id) return;
+    setPulses((prev) => [...prev, { id, color }]);
+    setTimeout(() => {
+      setPulses((prev) => prev.filter((x) => x.id !== id));
+    }, 2400);
+  }, []);
+
+  useEffect(() => {
+    const offNew = on('report:new', (r) => triggerPulse(r._id || r.id, '#059669'));
+    const offAssigned = on('report:assigned', (r) => triggerPulse(r._id || r.id, '#3b82f6'));
+    const offStatus = on('report:status-changed', (r) => triggerPulse(r._id || r.id, '#f59e0b'));
+    return () => { offNew(); offAssigned(); offStatus(); };
+  }, [on, triggerPulse]);
 
   const filteredReports = useMemo(() => {
     let list = allReports.filter(r => r.latitude && r.longitude);
@@ -32,13 +83,49 @@ export default function MapPage() {
     return list;
   }, [allReports, selectedCategories, selectedStatuses]);
 
+  // ── Telemetry arcs: project hotspot connections onto the map ──
+  const updateArcs = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const pairs = computeHotspotPairs(filteredReports);
+    setArcPaths(
+      pairs.map(([a, b]) => {
+        const pa = map.project([a.longitude, a.latitude]);
+        const pb = map.project([b.longitude, b.latitude]);
+        const mx = (pa.x + pb.x) / 2;
+        const my = (pa.y + pb.y) / 2;
+        const dx = pb.x - pa.x;
+        const dy = pb.y - pa.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const lift = Math.min(70, len * 0.28);
+        const cx = mx - (dy / len) * lift;
+        const cy = my + (dx / len) * lift;
+        return `M ${pa.x.toFixed(1)} ${pa.y.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${pb.x.toFixed(1)} ${pb.y.toFixed(1)}`;
+      })
+    );
+  }, [mapReady, filteredReports]);
+
+  useEffect(() => {
+    updateArcs();
+    const map = mapRef.current;
+    if (!map) return;
+    map.on('move', updateArcs);
+    map.on('zoom', updateArcs);
+    return () => { map.off('move', updateArcs); map.off('zoom', updateArcs); };
+  }, [updateArcs, mapReady]);
+
   const markers = useMemo(() => {
-    return filteredReports.map(r => ({
-      id: r._id || r.id,
-      lng: r.longitude,
-      lat: r.latitude,
-      color: '#059669',
-      popupHtml: `
+    return filteredReports.map(r => {
+      const reportId = r._id || r.id;
+      const activePulse = pulses.find((p) => p.id === reportId);
+      return {
+        id: reportId,
+        lng: r.longitude,
+        lat: r.latitude,
+        color: '#059669',
+        pulse: !!activePulse,
+        pulseColor: activePulse?.color || '#059669',
+        popupHtml: `
         <div style="font-family: system-ui, sans-serif; max-width: 240px; padding: 4px;">
           <h4 style="margin: 0 0 4px; font-size: 13px; font-weight: 800; color: #1e293b; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             ${(r.title || '').replace(/</g, '&lt;')}
@@ -56,8 +143,9 @@ export default function MapPage() {
           </div>
         </div>
       `,
-    }));
-  }, [filteredReports]);
+      };
+    });
+  }, [filteredReports, pulses]);
 
   const handleLocated = useCallback((lng, lat) => {
     const map = mapRef.current || mapInstance();
@@ -104,8 +192,29 @@ export default function MapPage() {
         clusterMarkers={true}
         fitBoundsToMarkers={true}
         showControls={true}
+        onMapLoad={() => setMapReady(true)}
         className="w-full h-full min-h-[500px]"
       >
+        {/* Radar sweep overlay */}
+        <div className="ga-radar z-[5]" />
+
+        {/* Telemetry hotspot arcs */}
+        {arcPaths.length > 0 && (
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" aria-hidden>
+            {arcPaths.map((d, i) => (
+              <path
+                key={i}
+                d={d}
+                fill="none"
+                stroke="rgba(16,185,129,0.65)"
+                strokeWidth={2}
+                className="ga-arc"
+                style={{ filter: 'drop-shadow(0 0 4px rgba(16,185,129,0.6))' }}
+              />
+            ))}
+          </svg>
+        )}
+
         {/* Top overlay */}
         <div className="absolute top-4 left-4 right-4 z-20 flex items-start gap-3">
           <div className="flex-1 max-w-md">

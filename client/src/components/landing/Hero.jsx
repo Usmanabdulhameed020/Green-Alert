@@ -1,9 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, ShieldAlert, Sparkles, UserCheck, Send } from 'lucide-react';
+import { ArrowRight, Sparkles, UserCheck, Send } from 'lucide-react';
+import { useTypewriter } from '../../hooks/useTypewriter';
+import PollutionCanvas from './PollutionCanvas';
+import RefuseDumpAnimation from './RefuseDumpAnimation';
+
+const LINE_1 = 'Report Environmental Issues';
+const LINE_2 = 'Before They Become';
+
+function Caret() {
+  return <span className="ga-caret inline-block w-[0.09em] h-[0.95em] rounded-full bg-emerald-500 align-middle ml-0.5" />;
+}
 
 export default function Hero() {
+  const [startScramble, setStartScramble] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setStartScramble(true), 500);
+    return () => clearTimeout(t);
+  }, []);
+
+  const line1 = useTypewriter(LINE_1, { start: startScramble, speed: 45 });
+  const line2 = useTypewriter(LINE_2, { start: startScramble && line1.done, delay: 250, speed: 45 });
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -43,7 +62,15 @@ export default function Hero() {
       {/* Grid Overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-40 -z-10" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center">
+      {/* Pollution → Clean particle transform */}
+      <PollutionCanvas />
+
+      {/* Continuous looping refuse scene (lg+ only) */}
+      <div className="absolute right-8 xl:right-16 bottom-10 w-56 xl:w-64 hidden lg:block pointer-events-none select-none" aria-hidden="true">
+        <RefuseDumpAnimation />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center relative z-10">
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -56,13 +83,25 @@ export default function Hero() {
             variants={itemVariants}
             className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6 mt-10"
           >
-            Report Environmental Issues <br className="hidden sm:inline" />
-            Before They Become{' '}
-            <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 bg-clip-text text-transparent drop-shadow-sm">
-              Disasters.
+            <span className="block relative">
+              <span className="invisible" aria-hidden="true">{LINE_1}</span>
+              <span className="absolute inset-0">
+                {line1.output}
+                {!line1.done && <Caret />}
+              </span>
+            </span>
+            <span className="block relative mt-1.5">
+              <span className="invisible" aria-hidden="true">{`${LINE_2} Disasters.`}</span>
+              <span className="absolute inset-0">
+                {line2.output}
+                {!line2.done && <Caret />}
+                {' '}
+                <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 bg-clip-text text-transparent drop-shadow-sm">
+                  Disasters.
+                </span>
+              </span>
             </span>
           </motion.h1>
-
           {/* Subtitle */}
           <motion.p
             variants={itemVariants}

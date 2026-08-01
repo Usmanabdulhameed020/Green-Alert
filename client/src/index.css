@@ -205,3 +205,344 @@ body {
     outline-offset: 3px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   GreenAlert "Alive" animation system
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Sonar ripple rings (map markers, report activation) ──────── */
+@keyframes ga-ripple {
+  0%   { transform: scale(0.3); opacity: 0.9; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+.ga-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  border: 2px solid rgba(16, 185, 129, 0.7);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: ga-ripple 1.6s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+/* ── Radar sweep overlay (living map) ─────────────────────────── */
+@keyframes ga-radar {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.ga-radar {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 300deg,
+    rgba(16, 185, 129, 0.18) 330deg,
+    rgba(16, 185, 129, 0.45) 360deg
+  );
+  animation: ga-radar 6s linear infinite;
+}
+.ga-radar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+}
+
+/* ── EKG heartbeat dash (healing timeline) ────────────────────── */
+@keyframes ga-ekg-dash {
+  0%   { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+.ga-ekg-draw {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: ga-ekg-dash 2.2s ease-out forwards;
+}
+@keyframes ga-ekg-beat {
+  0%, 100% { transform: scaleY(1); }
+  10%      { transform: scaleY(1.35); }
+  20%      { transform: scaleY(1); }
+}
+.ga-ekg-beat {
+  animation: ga-ekg-beat 1.4s ease-in-out infinite;
+}
+
+/* ── Leaf float (ambient / bursts) ────────────────────────────── */
+@keyframes ga-leaf-float {
+  0%   { transform: translateY(0) rotate(0deg); }
+  50%  { transform: translateY(-12px) rotate(18deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+.ga-leaf-float {
+  animation: ga-leaf-float 4s ease-in-out infinite;
+}
+
+/* ── Trophy shake (achievement storm) ─────────────────────────── */
+@keyframes ga-shake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  15%      { transform: rotate(-14deg) scale(1.12); }
+  30%      { transform: rotate(11deg) scale(1.12); }
+  45%      { transform: rotate(-9deg) scale(1.12); }
+  60%      { transform: rotate(6deg) scale(1.12); }
+  75%      { transform: rotate(-3deg) scale(1.12); }
+}
+.ga-shake {
+  animation: ga-shake 0.9s ease-in-out;
+}
+
+/* ── Screen flash (achievement storm) ─────────────────────────── */
+@keyframes ga-flash {
+  0%   { opacity: 0; }
+  15%  { opacity: 0.55; }
+  100% { opacity: 0; }
+}
+.ga-flash {
+  animation: ga-flash 0.9s ease-out forwards;
+}
+
+/* ── Breathing glow (tilt cards) ──────────────────────────────── */
+@keyframes ga-breathe {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 0.7;  transform: scale(1.06); }
+}
+.ga-breathe {
+  animation: ga-breathe 3.2s ease-in-out infinite;
+}
+
+/* ── Map marker pop-in ────────────────────────────────────────── */
+@keyframes ga-pop {
+  0%   { transform: scale(0.2); }
+  60%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+.ga-pop {
+  animation: ga-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── Telemetry arc dash flow ──────────────────────────────────── */
+@keyframes ga-arc-dash {
+  to { stroke-dashoffset: -24; }
+}
+.ga-arc {
+  stroke-dasharray: 6 6;
+  animation: ga-arc-dash 0.8s linear infinite;
+}
+
+/* ── Planet vitals EKG strip ──────────────────────────────────── */
+@keyframes ga-vitals {
+  0%   { stroke-dashoffset: 600; }
+  100% { stroke-dashoffset: 0; }
+}
+.ga-vitals-draw {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: ga-vitals 3s linear infinite;
+}
+@keyframes ga-vitals-spike {
+  0%   { transform: scaleY(1); }
+  8%   { transform: scaleY(2.2); }
+  20%  { transform: scaleY(1); }
+  100% { transform: scaleY(1); }
+}
+.ga-vitals-spike {
+  transform-origin: center;
+  animation: ga-vitals-spike 1.8s ease-out infinite;
+}
+
+/* ── Typewriter caret ─────────────────────────────────────────── */
+@keyframes ga-caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.ga-caret {
+  animation: ga-caret 0.9s step-end infinite;
+}
+
+/* ── Refuse dump scene — continuous 5.5s loop ─────────────────── */
+@keyframes rda-person {
+  0%   { transform: translateX(-150px); }
+  30%  { transform: translateX(60px); }
+  58%  { transform: translateX(60px); }
+  100% { transform: translateX(350px); }
+}
+@keyframes rda-bob {
+  0%, 100% { transform: translateY(0); }
+  25%      { transform: translateY(-2.5px); }
+  50%      { transform: translateY(0); }
+  75%      { transform: translateY(-2.5px); }
+}
+@keyframes rda-leg-l {
+  0%, 100% { transform: rotate(10deg); }
+  50%      { transform: rotate(-10deg); }
+}
+@keyframes rda-leg-r {
+  0%, 100% { transform: rotate(-10deg); }
+  50%      { transform: rotate(10deg); }
+}
+@keyframes rda-arm {
+  0%        { transform: rotate(-25deg); }
+  38%       { transform: rotate(-25deg); }
+  44%       { transform: rotate(40deg); }
+  50%       { transform: rotate(-76deg); }
+  56%       { transform: rotate(-60deg); }
+  100%      { transform: rotate(-25deg); }
+}
+@keyframes rda-bag {
+  0%, 38%   { transform: translate(0, 0); opacity: 1; }
+  44%       { transform: translate(-8px, -18px); opacity: 1; }
+  49%       { transform: translate(-22px, 26px); opacity: 1; }
+  53%       { transform: translate(58px, -52px); opacity: 1; }
+  58%       { transform: translate(146px, -22px); opacity: 1; }
+  62%       { transform: translate(152px, -18px); opacity: 0; }
+  100%      { transform: translate(0, 0); opacity: 0; }
+}
+@keyframes rda-bin-wiggle {
+  0%, 56%   { transform: rotate(0deg); }
+  59%       { transform: rotate(-3.5deg); }
+  63%       { transform: rotate(4deg); }
+  67%       { transform: rotate(-2.5deg); }
+  71%       { transform: rotate(1.5deg); }
+  75%, 100% { transform: rotate(0deg); }
+}
+@keyframes rda-puff {
+  0%, 56%   { transform: translate(0, 0) scale(0.3); opacity: 0; }
+  61%       { transform: translate(-8px, -5px) scale(1); opacity: 0.85; }
+  72%       { transform: translate(-18px, -13px) scale(1.9); opacity: 0; }
+  100%      { transform: translate(0, 0) scale(0.3); opacity: 0; }
+}
+@keyframes rda-leaf-drift {
+  0%, 100%  { transform: translateY(0) rotate(0deg); }
+  50%       { transform: translateY(-10px) rotate(14deg); }
+}
+
+.rda-person  { animation: rda-person 5.5s linear infinite; }
+.rda-bob     { animation: rda-bob 0.9s ease-in-out infinite; }
+.rda-leg-l   { animation: rda-leg-l 0.9s ease-in-out infinite; transform-box: fill-box; transform-origin: top center; }
+.rda-leg-r   { animation: rda-leg-r 0.9s ease-in-out infinite; transform-box: fill-box; transform-origin: top center; }
+.rda-arm     { animation: rda-arm 5.5s ease-in-out infinite; transform-box: view-box; transform-origin: 0px 142px; }
+.rda-bag     { animation: rda-bag 5.5s ease-in-out infinite; transform-box: view-box; transform-origin: 0px 142px; }
+.rda-bin     { animation: rda-bin-wiggle 5.5s ease-in-out infinite; transform-box: view-box; transform-origin: 240px 200px; }
+.rda-puff    { animation: rda-puff 5.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.rda-leaf    { animation: rda-leaf-drift 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+/* ── Recycling sorter scene — 6.5s loop ───────────────────────── */
+@keyframes rsa-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+@keyframes rsa-arm {
+  0%, 6%    { transform: rotate(-25deg); }
+  10%       { transform: rotate(38deg); }
+  14%       { transform: rotate(-60deg); }
+  20%, 36%  { transform: rotate(-25deg); }
+  40%       { transform: rotate(38deg); }
+  44%       { transform: rotate(-60deg); }
+  50%, 68%  { transform: rotate(-25deg); }
+  72%       { transform: rotate(38deg); }
+  76%       { transform: rotate(-60deg); }
+  82%, 100% { transform: rotate(-25deg); }
+}
+@keyframes rsa-item1 {
+  0%, 4%    { transform: translate(0, 0); opacity: 0; }
+  6%        { opacity: 1; }
+  10%       { transform: translate(40px, -40px); }
+  14%       { transform: translate(100px, -55px); }
+  18%       { transform: translate(150px, -30px); }
+  20%       { transform: translate(163px, -16px); opacity: 1; }
+  22%, 100% { transform: translate(165px, -24px); opacity: 0; }
+}
+@keyframes rsa-item2 {
+  0%, 4%    { transform: translate(0, 0); opacity: 0; }
+  6%        { opacity: 1; }
+  10%       { transform: translate(48px, -42px); }
+  14%       { transform: translate(120px, -60px); }
+  18%       { transform: translate(190px, -32px); }
+  20%       { transform: translate(205px, -16px); opacity: 1; }
+  22%, 100% { transform: translate(207px, -24px); opacity: 0; }
+}
+@keyframes rsa-item3 {
+  0%, 4%    { transform: translate(0, 0); opacity: 0; }
+  6%        { opacity: 1; }
+  10%       { transform: translate(55px, -45px); }
+  14%       { transform: translate(140px, -62px); }
+  18%       { transform: translate(230px, -34px); }
+  20%       { transform: translate(247px, -16px); opacity: 1; }
+  22%, 100% { transform: translate(249px, -24px); opacity: 0; }
+}
+@keyframes rsa-bin-wiggle {
+  0%        { transform: rotate(0deg); }
+  10%       { transform: rotate(-3deg); }
+  22%       { transform: rotate(3.5deg); }
+  36%       { transform: rotate(-2deg); }
+  50%       { transform: rotate(1deg); }
+  60%, 100% { transform: rotate(0deg); }
+}
+@keyframes rsa-puff {
+  0%, 30%, 100% { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  40%           { opacity: 0.85; transform: translate(-4px, -6px) scale(1); }
+  65%           { opacity: 0; transform: translate(-10px, -14px) scale(1.8); }
+}
+.rsa-bob     { animation: rsa-bob 0.5s ease-in-out infinite; }
+.rsa-arm     { animation: rsa-arm 6.5s ease-in-out infinite; transform-box: view-box; transform-origin: 0px 142px; }
+.rsa-item-1  { animation: rsa-item1 6.5s ease-in-out infinite; }
+.rsa-item-2  { animation: rsa-item2 6.5s ease-in-out infinite; animation-delay: 2.34s; }
+.rsa-item-3  { animation: rsa-item3 6.5s ease-in-out infinite; animation-delay: 4.42s; }
+.rsa-bin     { animation: rsa-bin-wiggle 6.5s ease-in-out infinite; transform-box: view-box; }
+.rsa-puff    { animation: rsa-puff 6.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+/* ── Tree planter scene — 6.5s loop ───────────────────────────── */
+@keyframes tpa-person {
+  0%          { transform: translateX(-170px); opacity: 1; }
+  18%         { transform: translateX(115px); }
+  22%         { transform: translateX(115px) translateY(3px); }
+  26%         { transform: translateX(115px) translateY(0); }
+  30%         { transform: translateX(115px) translateY(3px); }
+  34%, 58%    { transform: translateX(115px) translateY(0); }
+  78%         { transform: translateX(430px); opacity: 1; }
+  82%, 100%   { transform: translateX(430px); opacity: 0; }
+}
+@keyframes tpa-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+@keyframes tpa-arm {
+  0%, 16%  { transform: rotate(0deg); }
+  22%, 30% { transform: rotate(55deg); }
+  36%, 100% { transform: rotate(0deg); }
+}
+@keyframes tpa-sapling {
+  0%, 12% { opacity: 1; transform: translate(0, 0); }
+  16%     { opacity: 0; transform: translate(0, -4px); }
+  100%    { opacity: 0; transform: translate(0, 0); }
+}
+@keyframes tpa-trunk {
+  0%, 20%   { opacity: 0; transform: scaleY(0.3); }
+  26%       { opacity: 1; transform: scaleY(0.5); }
+  52%       { opacity: 1; transform: scaleY(1); }
+  82%       { opacity: 1; transform: scaleY(1); }
+  88%, 100% { opacity: 0; transform: scaleY(1); }
+}
+@keyframes tpa-leaves {
+  0%, 36%   { opacity: 0; transform: scale(0.3); }
+  46%       { opacity: 1; transform: scale(1.05); }
+  54%       { opacity: 1; transform: scale(1); }
+  82%       { opacity: 1; transform: scale(1); }
+  88%, 100% { opacity: 0; transform: scale(1); }
+}
+@keyframes tpa-petal {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-8px) rotate(12deg); }
+}
+.tpa-person  { animation: tpa-person 6.5s linear infinite; }
+.tpa-bob     { animation: tpa-bob 0.45s ease-in-out infinite; }
+.tpa-arm     { animation: tpa-arm 6.5s ease-in-out infinite; transform-box: view-box; transform-origin: 0px 142px; }
+.tpa-sapling { animation: tpa-sapling 6.5s ease-in-out infinite; }
+.tpa-trunk   { animation: tpa-trunk 6.5s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.tpa-leaves  { animation: tpa-leaves 6.5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.tpa-petal   { animation: tpa-petal 3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }

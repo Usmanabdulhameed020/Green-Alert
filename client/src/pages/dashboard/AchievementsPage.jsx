@@ -8,6 +8,26 @@ import {
 } from 'lucide-react';
 import { useCitizen } from '../../contexts/CitizenContext';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
+import LeafBurst from '../../components/ui/LeafBurst';
+
+/* ─── Animated XP Counter ──────────────────────────────────────── */
+const AnimatedNumber = ({ value }) => {
+  const [count, setCount] = React.useState(0);
+  React.useEffect(() => {
+    let start = 0;
+    const end = parseInt(value, 10) || 0;
+    if (start === end) { setCount(end); return; }
+    const duration = 900;
+    const increment = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) { setCount(end); clearInterval(timer); }
+      else setCount(Math.floor(start));
+    }, 16);
+    return () => clearInterval(timer);
+  }, [value]);
+  return <span>{count}</span>;
+};
 
 /* ─── Eco Tier System ───────────────────────────────────────────── */
 const ECO_TIERS = [
@@ -125,20 +145,46 @@ export default function AchievementsPage() {
         <p className="text-slate-500 text-sm font-semibold">Track your badges, level up your Eco Tier, and claim rewards</p>
       </div>
 
-      {/* Newly unlocked popup */}
+      {/* Newly unlocked popup — Achievement Storm */}
       <AnimatePresence>
         {newlyUnlockedPopup.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="bg-emerald-600 text-white rounded-2xl p-5 shadow-lg text-center"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.92, y: -10 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+            className="relative bg-emerald-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl text-center overflow-hidden"
           >
-            <Trophy className="h-8 w-8 mx-auto mb-2 animate-bounce" />
-            <h3 className="font-extrabold text-lg">New Achievement{newlyUnlockedPopup.length > 1 ? 's' : ''} Unlocked!</h3>
-            <p className="text-emerald-100 font-semibold text-sm mt-1">
-              {newlyUnlockedPopup.map((a) => a.name).join(', ')}
-            </p>
+            {/* Screen flash behind */}
+            <div className="ga-flash absolute inset-0 bg-emerald-300/40 pointer-events-none" />
+            {/* Leaf confetti storm */}
+            <div className="absolute inset-0 z-10 pointer-events-none">
+              <LeafBurst fire count={36} size="md" />
+              <LeafBurst fire count={20} size="sm" />
+            </div>
+            <div className="relative z-20">
+              <motion.div
+                className="w-20 h-20 bg-white/15 border border-white/30 rounded-3xl flex items-center justify-center mx-auto mb-4"
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 12, delay: 0.1 }}
+              >
+                <Trophy className="h-10 w-10 text-yellow-300 ga-shake" fill="currentColor" />
+              </motion.div>
+              <h3 className="font-extrabold text-xl sm:text-2xl">
+                New Achievement{newlyUnlockedPopup.length > 1 ? 's' : ''} Unlocked!
+              </h3>
+              <p className="text-emerald-100 font-semibold text-sm mt-1">
+                {newlyUnlockedPopup.map((a) => a.name).join(', ')}
+              </p>
+              <div className="mt-4 inline-flex items-center gap-2 bg-white/15 border border-white/30 rounded-2xl px-4 py-2">
+                <Zap className="h-4 w-4 text-yellow-300" />
+                <span className="font-extrabold text-lg tabular-nums">
+                  <AnimatedNumber value={points} />
+                </span>
+                <span className="text-xs font-bold text-emerald-100">XP total</span>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

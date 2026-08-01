@@ -20,6 +20,7 @@ import {
 import SEO from '../../components/SEO';
 import { useCitizen } from '../../contexts/CitizenContext';
 import AlertModal from '../../components/ui/AlertModal';
+import LeafBurst from '../../components/ui/LeafBurst';
 import axios from 'axios';
 
 const steps = [
@@ -637,12 +638,41 @@ export default function CreateReport() {
               </div>
             )}
 
-            {/* Step 7: Success Animation */}
+            {/* Step 7: Success Animation — Report Activation */}
             {currentStep === 6 && (
-              <div className="text-center py-12 space-y-6">
-                <div className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto text-4xl shadow-md">
-                  ✓
+              <div className="relative text-center py-8 space-y-6 overflow-hidden">
+                {/* Leaf burst celebration */}
+                <div className="absolute inset-0 z-10">
+                  <LeafBurst fire count={18} size="md" />
                 </div>
+
+                {/* Mini map with sonar activation */}
+                <div className="relative w-full max-w-sm mx-auto h-44 rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+                  <MapLibreMap
+                    mapRef={null}
+                    static
+                    interactive={false}
+                    showControls={false}
+                    center={[formData.longitude || 3.3792, formData.latitude || 6.5244]}
+                    zoom={13}
+                    markers={[{ id: 'new-report', lng: formData.longitude || 3.3792, lat: formData.latitude || 6.5244, color: '#059669' }]}
+                    className="w-full h-full"
+                  />
+                  {/* Sonar rings on the pin */}
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 pointer-events-none">
+                    <div className="ga-ripple" />
+                    <div className="ga-ripple" style={{ animationDelay: '0.5s' }} />
+                  </div>
+                </div>
+
+                <motion.div
+                  initial={{ scale: 0, rotate: -30 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.15 }}
+                  className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto text-4xl shadow-md"
+                >
+                  ✓
+                </motion.div>
                 <div className="space-y-2">
                   <h2 className="text-2xl font-extrabold text-slate-900">Report Logged Successfully!</h2>
                   <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed">

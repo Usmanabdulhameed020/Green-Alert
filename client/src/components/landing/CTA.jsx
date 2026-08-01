@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
+import TreePlanterAnimation from './TreePlanterAnimation';
 
 export default function CTA() {
   return (
@@ -52,6 +53,11 @@ export default function CTA() {
             </Link>
           </div>
         </motion.div>
+
+        {/* Planting scene — the page ends on growth */}
+        <div className="mt-14 w-60 sm:w-72 mx-auto" aria-hidden="true">
+          <TreePlanterAnimation />
+        </div>
       </div>
     </section>
   );

@@ -11,7 +11,11 @@ const connectDB = async () => {
   }
 
   try {
-    await mongoose.connect(dbUri);
+    await mongoose.connect(dbUri, {
+      serverSelectionTimeoutMS: 45000,
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+    });
     logger.info('Database connected successfully.');
     return true;
   } catch (err) {

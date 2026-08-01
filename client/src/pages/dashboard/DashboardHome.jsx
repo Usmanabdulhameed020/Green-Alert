@@ -18,6 +18,7 @@ import { useCitizen } from '../../contexts/CitizenContext';
 import StatusBadge from '../../components/ui/StatusBadge';
 import EmptyState from '../../components/ui/EmptyState';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
+import TiltCard from '../../components/ui/TiltCard';
 import {
   AreaChart,
   Area,
@@ -191,20 +192,24 @@ export default function DashboardHome() {
           ].map((action, idx) => {
             const Icon = action.icon;
             return (
-              <motion.button
+              <TiltCard
                 key={idx}
-                whileHover={{ y: -3, scale: 1.01 }}
-                onClick={() => navigate(action.path)}
-                className={`w-full text-left p-5 bg-white border rounded-2xl transition-all shadow-sm cursor-pointer flex flex-col justify-between h-40 ${action.color}`}
+                className="group"
               >
-                <div className="p-3 rounded-xl bg-white shadow-sm self-start">
-                  <Icon className="h-6 w-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-[15px]">{action.title}</h4>
-                  <p className="text-slate-500 text-xs mt-1 leading-relaxed">{action.desc}</p>
-                </div>
-              </motion.button>
+                <motion.button
+                  whileHover={{ y: -3, scale: 1.01 }}
+                  onClick={() => navigate(action.path)}
+                  className={`w-full h-full text-left p-5 bg-white border rounded-2xl transition-all shadow-sm cursor-pointer flex flex-col justify-between h-40 ${action.color}`}
+                >
+                  <div className="p-3 rounded-xl bg-white shadow-sm self-start">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-[15px]">{action.title}</h4>
+                    <p className="text-slate-500 text-xs mt-1 leading-relaxed">{action.desc}</p>
+                  </div>
+                </motion.button>
+              </TiltCard>
             );
           })}
         </div>

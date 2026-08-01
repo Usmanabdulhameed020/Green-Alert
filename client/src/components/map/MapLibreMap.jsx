@@ -126,6 +126,7 @@ const LAYER_IDS = {
   CLUSTERS: 'clusters',
   CLUSTER_COUNT: 'cluster-count',
   UNCLUSTERED: 'unclustered-point',
+  PULSE: 'pulse-layer',
 };
 
 export default function MapLibreMap({
@@ -143,6 +144,7 @@ export default function MapLibreMap({
   static: isStatic = false,
   className = '',
   children,
+  onMapLoad,
 }) {
   const containerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -182,6 +184,7 @@ export default function MapLibreMap({
       map.on('load', () => {
         mapInstanceRef.current = map;
         setMapLoaded(true);
+        if (onMapLoad) onMapLoad(map);
         setTimeout(() => { map.resize(); }, 150);
       });
 
@@ -262,6 +265,10 @@ export default function MapLibreMap({
         if (map.getLayer(id)) map.removeLayer(id);
       });
       map.removeSource(sourceId);
+    }
+    if (map.getSource('pulse-source')) {
+      if (map.getLayer(LAYER_IDS.PULSE)) map.removeLayer(LAYER_IDS.PULSE);
+      map.removeSource('pulse-source');
     }
 
     markersRef.current.forEach((m) => m.remove());
@@ -404,6 +411,58 @@ export default function MapLibreMap({
 
       map.on('mouseenter', LAYER_IDS.UNCLUSTERED, () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', LAYER_IDS.UNCLUSTERED, () => { map.getCanvas().style.cursor = ''; });
+    }
+
+    // ── Sonar pulse layer: expanding rings on freshly-flagged markers ──
+    const pulseFeatures = markers
+      .filter((m) => m.pulse && m.lng != null && m.lat != null)
+      .slice(0, 12)
+      .map((m) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [m.lng, m.lat] },
+        properties: { pulse: 0, color: m.pulseColor || m.color || '#059669' },
+      }));
+
+    if (pulseFeatures.length && map.getSource('pulse-source')) {
+      map.removeLayer(LAYER_IDS.PULSE);
+      map.removeSource('pulse-source');
+    }
+
+    if (pulseFeatures.length) {
+      map.addSource('pulse-source', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: pulseFeatures },
+      });
+      map.addLayer({
+        id: LAYER_IDS.PULSE,
+        type: 'circle',
+        source: 'pulse-source',
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': ['interpolate', ['linear'], ['get', 'pulse'], 0, 8, 1, 52],
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'pulse'], 0, 0.55, 0.7, 0.25, 1, 0],
+          'circle-stroke-width': ['interpolate', ['linear'], ['get', 'pulse'], 0, 2, 1, 5],
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-opacity': ['interpolate', ['linear'], ['get', 'pulse'], 0, 0.9, 1, 0],
+        },
+      });
+
+      const start = performance.now();
+      const DURATION = 1800;
+      const tick = (now) => {
+        const src = map.getSource('pulse-source');
+        if (!src) return;
+        const p = Math.min(1, (now - start) / DURATION);
+        src.setData({
+          type: 'FeatureCollection',
+          features: pulseFeatures.map((f) => ({
+            ...f,
+            properties: { ...f.properties, pulse: p },
+          })),
+        });
+        if (p < 1 && map.loaded()) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
     }
   }, [markers, mapLoaded, clusterMarkers, fitBoundsToMarkers, isStatic, onMarkerClick, activeProvider]);
 
