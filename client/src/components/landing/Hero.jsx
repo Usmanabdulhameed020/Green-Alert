@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, UserCheck, Send } from 'lucide-react';
-import { useTypewriter } from '../../hooks/useTypewriter';
-import PollutionCanvas from './PollutionCanvas';
+import { useTypewriterLoop } from '../../hooks/useTypewriter';
 import RefuseDumpAnimation from './RefuseDumpAnimation';
 
 const LINE_1 = 'Report Environmental Issues';
 const LINE_2 = 'Before They Become';
+const HERO_LINES = [LINE_1, LINE_2];
 
 function Caret() {
   return <span className="ga-caret inline-block w-[0.09em] h-[0.95em] rounded-full bg-emerald-500 align-middle ml-0.5" />;
@@ -15,14 +15,25 @@ function Caret() {
 
 export default function Hero() {
   const [startScramble, setStartScramble] = useState(false);
+  const reduced = useMemo(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    []
+  );
 
   useEffect(() => {
     const t = setTimeout(() => setStartScramble(true), 500);
     return () => clearTimeout(t);
   }, []);
 
-  const line1 = useTypewriter(LINE_1, { start: startScramble, speed: 45 });
-  const line2 = useTypewriter(LINE_2, { start: startScramble && line1.done, delay: 250, speed: 45 });
+  const { output: typed, active } = useTypewriterLoop(HERO_LINES, {
+    start: startScramble && !reduced,
+    typeSpeed: 45,
+    deleteSpeed: 22,
+    hold: 1800,
+  });
+
+  const line1 = reduced ? LINE_1 : typed[0];
+  const line2 = reduced ? LINE_2 : typed[1];
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -62,9 +73,6 @@ export default function Hero() {
       {/* Grid Overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-40 -z-10" />
 
-      {/* Pollution → Clean particle transform */}
-      <PollutionCanvas />
-
       {/* Continuous looping refuse scene (lg+ only) */}
       <div className="absolute right-8 xl:right-16 bottom-10 w-56 xl:w-64 hidden lg:block pointer-events-none select-none" aria-hidden="true">
         <RefuseDumpAnimation />
@@ -81,24 +89,19 @@ export default function Hero() {
           {/* Heading */}
           <motion.h1
             variants={itemVariants}
+            aria-label={`${LINE_1} ${LINE_2} Disasters.`}
             className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6 mt-10"
           >
-            <span className="block relative">
-              <span className="invisible" aria-hidden="true">{LINE_1}</span>
-              <span className="absolute inset-0">
-                {line1.output}
-                {!line1.done && <Caret />}
-              </span>
+            <span className="block min-h-[1.15em]">
+              {line1}
+              {!reduced && active === 0 && <Caret />}
             </span>
-            <span className="block relative mt-1.5">
-              <span className="invisible" aria-hidden="true">{`${LINE_2} Disasters.`}</span>
-              <span className="absolute inset-0">
-                {line2.output}
-                {!line2.done && <Caret />}
-                {' '}
-                <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 bg-clip-text text-transparent drop-shadow-sm">
-                  Disasters.
-                </span>
+            <span className="block min-h-[1.15em] mt-1.5">
+              {line2}
+              {!reduced && active === 1 && <Caret />}
+              {' '}
+              <span className={`inline-block bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 bg-clip-text text-transparent drop-shadow-sm transition-opacity duration-300 ${line2 ? 'opacity-100' : 'opacity-0'}`}>
+                Disasters.
               </span>
             </span>
           </motion.h1>
