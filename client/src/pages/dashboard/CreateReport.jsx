@@ -208,33 +208,63 @@ export default function CreateReport() {
   };
 
   const reverseGeocode = async (lat, lng) => {
+    setSearching(true);
     try {
-      setSearching(true);
+      // Primary Nominatim Reverse Geocoding API
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`,
+        { headers: { 'User-Agent': 'GreenAlert-App/1.0' } }
       );
       const data = await res.json();
       if (data && data.display_name) {
         setFormData(prev => ({
           ...prev,
           location: data.display_name,
+          latitude: lat,
+          longitude: lng,
+        }));
+        return;
+      }
+      
+      // Fallback API if Nominatim fails or returns empty
+      const fallbackRes = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+      );
+      const fallbackData = await fallbackRes.json();
+      if (fallbackData && (fallbackData.locality || fallbackData.city || fallbackData.principalSubdivision)) {
+        const parts = [
+          fallbackData.locality || fallbackData.name,
+          fallbackData.city,
+          fallbackData.principalSubdivision,
+          fallbackData.countryName
+        ].filter(Boolean);
+        
+        setFormData(prev => ({
+          ...prev,
+          location: parts.join(', '),
+          latitude: lat,
+          longitude: lng,
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          location: `GPS Coordinates: ${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+          latitude: lat,
+          longitude: lng,
         }));
       }
     } catch (err) {
       console.error('Reverse geocode error:', err);
+      setFormData(prev => ({
+        ...prev,
+        location: `GPS Coordinates: ${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+        latitude: lat,
+        longitude: lng,
+      }));
     } finally {
       setSearching(false);
     }
   };
-
-  const handleMapClick = useCallback(({ lng, lat }) => {
-    setFormData(prev => ({
-      ...prev,
-      latitude: lat,
-      longitude: lng,
-    }));
-    reverseGeocode(lat, lng);
-  }, []);
 
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -245,18 +275,17 @@ export default function CreateReport() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        setFormData(prev => ({
-          ...prev,
-          latitude,
-          longitude,
-        }));
         reverseGeocode(latitude, longitude);
       },
       (error) => {
         setSearching(false);
-        setAlertMsg('Unable to retrieve your current location. Please allow location access.');
+        let errorText = 'Unable to retrieve your location. Please check browser permissions.';
+        if (error.code === 1) errorText = 'Location access was denied. Please allow location permissions in your browser.';
+        else if (error.code === 2) errorText = 'Location information is unavailable.';
+        else if (error.code === 3) errorText = 'Location request timed out.';
+        setAlertMsg(errorText);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -485,8 +514,6 @@ export default function CreateReport() {
                           type="text"
                           placeholder="e.g. No. 16 Chief D.A. Akinola Street, Taoheed, Basin, Ilorin"
                           value={formData.location}
-                          onFocus={() => setInputFocused(true)}
-                          onBlur={() => setTimeout(() => setInputFocused(false), 200)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
@@ -501,32 +528,7 @@ export default function CreateReport() {
                           <div className="absolute right-3.5 top-3.5 w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => geocodeAddress()}
-                        className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer flex-shrink-0 shadow-sm"
-                      >
-                        Search Area
-                      </button>
                     </div>
-
-                    {inputFocused && suggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-56 overflow-y-auto divide-y divide-slate-100">
-                        {suggestions.map((item, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onMouseDown={() => handleSuggestion(item)}
-                            className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-                          >
-                            <span className="block truncate font-semibold">{item.display_name}</span>
-                            <span className="block text-[11px] text-slate-400 font-semibold mt-0.5">
-                              {item.type?.replace(/_/g, ' ') || 'place'} &middot; {item.class}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
                   <div className="p-3.5 bg-white rounded-xl border border-slate-200/60 flex items-start gap-2.5">
