@@ -114,9 +114,9 @@ const GOOGLE_HYBRID_STYLE = {
 };
 
 const SATELLITE_PROVIDERS = [
-  { id: 'esri',          name: 'Esri Satellite',              badge: 'HD Aerial',     style: ESRI_SATELLITE_STYLE },
-  { id: 'google_sat',    name: 'Google Pure Satellite',        badge: 'Zoom up to 21', style: GOOGLE_PURE_SATELLITE_STYLE },
   { id: 'google_hybrid', name: 'Google Hybrid (With Labels)', badge: 'Zoom up to 21', style: GOOGLE_HYBRID_STYLE },
+  { id: 'google_sat',    name: 'Google Pure Satellite',        badge: 'Zoom up to 21', style: GOOGLE_PURE_SATELLITE_STYLE },
+  { id: 'esri',          name: 'Esri Satellite',              badge: 'HD Aerial',     style: ESRI_SATELLITE_STYLE },
 ];
 
 const DEFAULT_CENTER = [3.3792, 6.5244];
@@ -150,7 +150,7 @@ export default function MapLibreMap({
   const mapInstanceRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState(null);
-  const [activeProvider, setActiveProvider] = useState('esri');
+  const [activeProvider, setActiveProvider] = useState('google_hybrid');
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   const markersRef = useRef([]);
   const popupRef = useRef(null);
