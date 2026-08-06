@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import MapLibreMap from '../../components/map/MapLibreMap';
 import {
   ArrowLeft,
   Bookmark,
@@ -322,24 +321,6 @@ export default function ReportDetails() {
                   {report.description}
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* Map Preview */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-emerald-600" />
-              Incident Geolocation
-            </h3>
-            <div className="h-72 rounded-2xl overflow-hidden border border-slate-200">
-              <MapLibreMap
-                center={[lng, lat]}
-                zoom={14}
-                interactive={false}
-                showControls={false}
-                markers={[{ id: 'report-location', lng, lat, color: '#059669' }]}
-                className="w-full h-full"
-              />
             </div>
           </div>
         </div>

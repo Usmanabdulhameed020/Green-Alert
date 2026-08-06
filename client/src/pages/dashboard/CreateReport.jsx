@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import MapLibreMap from '../../components/map/MapLibreMap';
 import {
   ShieldAlert,
   ArrowLeft,
@@ -458,104 +457,83 @@ export default function CreateReport() {
               </div>
             )}
 
-            {/* Step 2: Location Map Picker */}
+            {/* Step 2: Location Address */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div className="space-y-1">
                   <h2 className="text-xl font-bold text-slate-900">Incident Location</h2>
-                  <p className="text-xs text-slate-500 font-semibold">Specify address description and verify on the map picker.</p>
+                  <p className="text-xs text-slate-500 font-semibold">Enter the precise address or landmark where the environmental issue occurred.</p>
                 </div>
 
-                <div className="space-y-2 relative">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Address Description</label>
-                  <div className="relative flex gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        type="text"
-                        placeholder="e.g. 15 Allen Avenue, Ikeja, Lagos, Nigeria"
-                        value={formData.location}
-                        onFocus={() => setInputFocused(true)}
-                        onBlur={() => setTimeout(() => setInputFocused(false), 200)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            geocodeAddress();
-                          }
-                        }}
-                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                        className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl py-3 pl-10 pr-4 text-sm font-semibold outline-none"
-                      />
-                      <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                      {searching && (
-                        <div className="absolute right-3.5 top-3.5 w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-                      )}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+                  <div className="space-y-2 relative">
+                    <div className="flex justify-between items-center">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Address / Landmark</label>
+                      <button
+                        type="button"
+                        onClick={handleUseCurrentLocation}
+                        className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100/60 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+                        Use My GPS Location
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => geocodeAddress()}
-                      className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer flex-shrink-0"
-                    >
-                      <MapPin className="h-3.5 w-3.5" />
-                      Locate
-                    </button>
-                  </div>
-                  {inputFocused && suggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-52 overflow-y-auto">
-                      {suggestions.map((item, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onMouseDown={() => handleSuggestion(item)}
-                          className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 border-b border-slate-100 last:border-0 transition-colors"
-                        >
-                          <span className="block truncate">{item.display_name}</span>
-                          <span className="block text-[11px] text-slate-400 font-semibold mt-0.5">
-                            {item.type?.replace(/_/g, ' ') || 'place'} &middot; {item.class}
-                          </span>
-                        </button>
-                      ))}
+
+                    <div className="relative flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          placeholder="e.g. No. 16 Chief D.A. Akinola Street, Taoheed, Basin, Ilorin"
+                          value={formData.location}
+                          onFocus={() => setInputFocused(true)}
+                          onBlur={() => setTimeout(() => setInputFocused(false), 200)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              geocodeAddress();
+                            }
+                          }}
+                          onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                          className="w-full bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl py-3 pl-10 pr-4 text-sm font-semibold text-slate-800 outline-none transition-all"
+                        />
+                        <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                        {searching && (
+                          <div className="absolute right-3.5 top-3.5 w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => geocodeAddress()}
+                        className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer flex-shrink-0 shadow-sm"
+                      >
+                        Search Area
+                      </button>
                     </div>
-                  )}
-                </div>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Map Verification</span>
-                    <button
-                      type="button"
-                      onClick={handleUseCurrentLocation}
-                      className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <MapPin className="h-3.5 w-3.5 text-emerald-600" />
-                      Use Current GPS Location
-                    </button>
-                  </div>
-
-                  <div className="h-80 rounded-2xl overflow-hidden border border-slate-200 shadow-inner z-10 relative">
-                    <MapLibreMap
-                      center={[formData.longitude, formData.latitude]}
-                      zoom={14}
-                      showControls={true}
-                      interactive={true}
-                      onClick={handleMapClick}
-                      markers={[{
-                        id: 'picker',
-                        lng: formData.longitude,
-                        lat: formData.latitude,
-                        color: '#059669',
-                      }]}
-                      className="w-full h-full"
-                    />
+                    {inputFocused && suggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-56 overflow-y-auto divide-y divide-slate-100">
+                        {suggestions.map((item, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onMouseDown={() => handleSuggestion(item)}
+                            className="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                          >
+                            <span className="block truncate font-semibold">{item.display_name}</span>
+                            <span className="block text-[11px] text-slate-400 font-semibold mt-0.5">
+                              {item.type?.replace(/_/g, ' ') || 'place'} &middot; {item.class}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 font-semibold gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-1.5">
-                      <Info className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
-                      <span>Click anywhere on the map to pin exact incident spot.</span>
-                    </div>
-                    <div className="font-mono text-slate-700 font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200 self-start sm:self-auto">
-                      📍 {formData.latitude.toFixed(5)}, {formData.longitude.toFixed(5)}
-                    </div>
+                  <div className="p-3.5 bg-white rounded-xl border border-slate-200/60 flex items-start gap-2.5">
+                    <Info className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                      If an exact street address cannot be found, type the nearest popular area or landmark (e.g. street name, junction, hospital, or school) to assist response teams.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -795,37 +773,18 @@ export default function CreateReport() {
                   <LeafBurst fire count={18} size="md" />
                 </div>
 
-                {/* Mini map with sonar activation */}
-                <div className="relative w-full max-w-sm mx-auto h-44 rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-                  <MapLibreMap
-                    mapRef={null}
-                    static
-                    interactive={false}
-                    showControls={false}
-                    center={[formData.longitude || 3.3792, formData.latitude || 6.5244]}
-                    zoom={13}
-                    markers={[{ id: 'new-report', lng: formData.longitude || 3.3792, lat: formData.latitude || 6.5244, color: '#059669' }]}
-                    className="w-full h-full"
-                  />
-                  {/* Sonar rings on the pin */}
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 pointer-events-none">
-                    <div className="ga-ripple" />
-                    <div className="ga-ripple" style={{ animationDelay: '0.5s' }} />
-                  </div>
-                </div>
-
                 <motion.div
                   initial={{ scale: 0, rotate: -30 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.15 }}
-                  className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto text-4xl shadow-md"
+                  className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto shadow-md"
                 >
-                  ✓
+                  <CheckCircle className="w-10 h-10 text-emerald-600" />
                 </motion.div>
                 <div className="space-y-2">
                   <h2 className="text-2xl font-extrabold text-slate-900">Report Logged Successfully!</h2>
-                  <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed">
-                    Your environmental incident has been submitted. We have auto-routed coordinates to the nearest dispatch organization.
+                  <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed font-semibold">
+                    Your environmental incident report has been submitted. Relevant response agencies have been notified of your location.
                   </p>
                 </div>
                 <div className="pt-6 flex flex-col sm:flex-row justify-center gap-3">
