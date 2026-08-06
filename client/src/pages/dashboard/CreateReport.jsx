@@ -173,13 +173,58 @@ export default function CreateReport() {
     }));
   };
 
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      setSearching(true);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`
+      );
+      const data = await res.json();
+      if (data && data.display_name) {
+        setFormData(prev => ({
+          ...prev,
+          location: data.display_name,
+        }));
+      }
+    } catch (err) {
+      console.error('Reverse geocode error:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const handleMapClick = useCallback(({ lng, lat }) => {
     setFormData(prev => ({
       ...prev,
       latitude: lat,
       longitude: lng,
     }));
+    reverseGeocode(lat, lng);
   }, []);
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setAlertMsg('Geolocation is not supported by your browser.');
+      return;
+    }
+    setSearching(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setFormData(prev => ({
+          ...prev,
+          latitude,
+          longitude,
+        }));
+        reverseGeocode(latitude, longitude);
+      },
+      (error) => {
+        setSearching(false);
+        setAlertMsg('Unable to retrieve your current location. Please allow location access.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -438,9 +483,20 @@ export default function CreateReport() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Map Verification (Click to position marker)</span>
-                  <div className="h-64 rounded-2xl overflow-hidden border border-slate-200 z-10 relative">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Map Verification</span>
+                    <button
+                      type="button"
+                      onClick={handleUseCurrentLocation}
+                      className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+                      Use Current GPS Location
+                    </button>
+                  </div>
+
+                  <div className="h-80 rounded-2xl overflow-hidden border border-slate-200 shadow-inner z-10 relative">
                     <MapLibreMap
                       center={[formData.longitude, formData.latitude]}
                       zoom={14}
@@ -456,9 +512,15 @@ export default function CreateReport() {
                       className="w-full h-full"
                     />
                   </div>
-                  <div className="text-[11px] text-slate-500 font-semibold flex items-center gap-1.5">
-                    <Info className="h-3.5 w-3.5 text-slate-400" />
-                    Selected Coordinates: {formData.latitude.toFixed(5)}, {formData.longitude.toFixed(5)}
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 font-semibold gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-1.5">
+                      <Info className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
+                      <span>Click anywhere on the map to pin exact incident spot.</span>
+                    </div>
+                    <div className="font-mono text-slate-700 font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200 self-start sm:self-auto">
+                      📍 {formData.latitude.toFixed(5)}, {formData.longitude.toFixed(5)}
+                    </div>
                   </div>
                 </div>
               </div>
