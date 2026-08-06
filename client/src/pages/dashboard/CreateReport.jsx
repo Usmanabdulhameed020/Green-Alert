@@ -115,16 +115,52 @@ export default function CreateReport() {
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&accept-language=en`
         );
         const data = await res.json();
-        setSuggestions(Array.isArray(data) ? data : []);
+        const results = Array.isArray(data) ? data : [];
+        setSuggestions(results);
+
+        // Auto-navigate map to top result as user types without needing to click suggestion
+        if (results.length > 0) {
+          const topResult = results[0];
+          setFormData(prev => ({
+            ...prev,
+            latitude: parseFloat(topResult.lat),
+            longitude: parseFloat(topResult.lon),
+          }));
+        }
       } catch {
         setSuggestions([]);
       } finally {
         setSearching(false);
       }
-    }, 400);
+    }, 600);
 
     return () => clearTimeout(searchTimer.current);
   }, [formData.location]);
+
+  const geocodeAddress = async (addressToGeocode) => {
+    const address = (addressToGeocode || formData.location)?.trim();
+    if (!address || address.length < 3) return;
+    setSearching(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&accept-language=en`
+      );
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const item = data[0];
+        setFormData(prev => ({
+          ...prev,
+          location: item.display_name,
+          latitude: parseFloat(item.lat),
+          longitude: parseFloat(item.lon),
+        }));
+      }
+    } catch (err) {
+      console.error('Geocoding error:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const handleSuggestion = (item) => {
     setSuggestions([]);
@@ -352,20 +388,36 @@ export default function CreateReport() {
 
                 <div className="space-y-2 relative">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Address Description</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="e.g. Surulere canal gutter, Lagos, Nigeria"
-                      value={formData.location}
-                      onFocus={() => setInputFocused(true)}
-                      onBlur={() => setTimeout(() => setInputFocused(false), 200)}
-                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl py-3 pl-10 pr-4 text-sm font-semibold outline-none"
-                    />
-                    <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                    {searching && (
-                      <div className="absolute right-3.5 top-3.5 w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-                    )}
+                  <div className="relative flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        placeholder="e.g. 15 Allen Avenue, Ikeja, Lagos, Nigeria"
+                        value={formData.location}
+                        onFocus={() => setInputFocused(true)}
+                        onBlur={() => setTimeout(() => setInputFocused(false), 200)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            geocodeAddress();
+                          }
+                        }}
+                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                        className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl py-3 pl-10 pr-4 text-sm font-semibold outline-none"
+                      />
+                      <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                      {searching && (
+                        <div className="absolute right-3.5 top-3.5 w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => geocodeAddress()}
+                      className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer flex-shrink-0"
+                    >
+                      <MapPin className="h-3.5 w-3.5" />
+                      Locate
+                    </button>
                   </div>
                   {inputFocused && suggestions.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-52 overflow-y-auto">
@@ -391,8 +443,8 @@ export default function CreateReport() {
                   <div className="h-64 rounded-2xl overflow-hidden border border-slate-200 z-10 relative">
                     <MapLibreMap
                       center={[formData.longitude, formData.latitude]}
-                      zoom={12}
-                      showControls={false}
+                      zoom={14}
+                      showControls={true}
                       interactive={true}
                       onClick={handleMapClick}
                       markers={[{
