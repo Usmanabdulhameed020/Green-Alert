@@ -100,6 +100,49 @@ export default function CreateReport() {
   const [inputFocused, setInputFocused] = useState(false);
   const searchTimer = useRef(null);
 
+  // Robust multi-pass fallback geocoder: strips house numbers and specific street names if missing in OpenStreetMap, navigating to nearest area/neighborhood/city
+  const fetchGeocodeWithFallback = async (fullAddress) => {
+    if (!fullAddress || fullAddress.trim().length < 3) return null;
+
+    const raw = fullAddress.trim();
+    // Split address by commas or spaces into progressive search attempts
+    const parts = raw.split(',').map(p => p.trim()).filter(Boolean);
+
+    const candidates = [];
+    candidates.push(raw);
+
+    // Progressive candidate 1: remove house/building numbers (e.g., "No. 16 ")
+    const strippedNumber = raw.replace(/^(no\.?\s*\d+|house\s*\d+|\d+)\s*,?/i, '').trim();
+    if (strippedNumber && !candidates.includes(strippedNumber)) {
+      candidates.push(strippedNumber);
+    }
+
+    // Progressive candidate 2..N: progressively drop leftmost comma parts (e.g. drop house number & street, try "Taoheed, Basin, Ilorin, Kwara State, Nigeria")
+    while (parts.length > 1) {
+      parts.shift();
+      const subQuery = parts.join(', ');
+      if (subQuery.length >= 3 && !candidates.includes(subQuery)) {
+        candidates.push(subQuery);
+      }
+    }
+
+    // Try candidates in order from most specific to nearest broad area
+    for (const query of candidates) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=en`
+        );
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return { data, queryUsed: query };
+        }
+      } catch (e) {
+        // continue to next fallback candidate
+      }
+    }
+    return null;
+  };
+
   useEffect(() => {
     const address = formData.location?.trim();
     if (!address || address.length < 3) {
@@ -111,21 +154,17 @@ export default function CreateReport() {
     setSearching(true);
     searchTimer.current = setTimeout(async () => {
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&accept-language=en`
-        );
-        const data = await res.json();
-        const results = Array.isArray(data) ? data : [];
-        setSuggestions(results);
-
-        // Auto-navigate map to top result as user types without needing to click suggestion
-        if (results.length > 0) {
-          const topResult = results[0];
+        const result = await fetchGeocodeWithFallback(address);
+        if (result && result.data.length > 0) {
+          setSuggestions(result.data);
+          const top = result.data[0];
           setFormData(prev => ({
             ...prev,
-            latitude: parseFloat(topResult.lat),
-            longitude: parseFloat(topResult.lon),
+            latitude: parseFloat(top.lat),
+            longitude: parseFloat(top.lon),
           }));
+        } else {
+          setSuggestions([]);
         }
       } catch {
         setSuggestions([]);
@@ -142,15 +181,11 @@ export default function CreateReport() {
     if (!address || address.length < 3) return;
     setSearching(true);
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&accept-language=en`
-      );
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const item = data[0];
+      const result = await fetchGeocodeWithFallback(address);
+      if (result && result.data.length > 0) {
+        const item = result.data[0];
         setFormData(prev => ({
           ...prev,
-          location: item.display_name,
           latitude: parseFloat(item.lat),
           longitude: parseFloat(item.lon),
         }));
