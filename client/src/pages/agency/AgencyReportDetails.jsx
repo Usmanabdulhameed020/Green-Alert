@@ -1,20 +1,17 @@
+﻿import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   ArrowLeft, MapPin, Calendar, Clock, User, Building2,
-  CheckCircle, FileText, Upload, Loader2, Camera, ShieldCheck, X,
+  CheckCircle, FileText, Loader2, Camera, ShieldCheck, X,
 } from 'lucide-react';
 import axios from 'axios';
 import { useCitizen } from '../../contexts/CitizenContext';
-import DiscussionSection from '../../components/ui/DiscussionSection';
-import BeforeAfterSlider from '../../components/ui/BeforeAfterSlider';
-import PDFReportGenerator from '../../components/ui/PDFReportGenerator';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?q=80&w=1200&auto=format&fit=crop';
 
 const workflowStatuses = ['Submitted', 'Under Review', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
-const agencyStatuses = ['Assigned', 'In Progress', 'Resolved', 'Closed'];
+const agencyStatuses = ['In Progress', 'Resolved', 'Closed'];
 
 const statusColors = {
   Resolved:      'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -157,7 +154,6 @@ export default function AgencyReportDetails() {
           Back to Reports
         </button>
         <div className="flex items-center gap-2">
-          <PDFReportGenerator report={report} />
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Agency View</span>
         </div>
       </div>
@@ -279,15 +275,29 @@ export default function AgencyReportDetails() {
             </div>
           </motion.div>
 
-          {/* Before & After Slider */}
+          {/* Resolution evidence */}
           {report.resolutionImages?.length > 0 && (
-            <BeforeAfterSlider
-              beforeImage={report.imageUrl || report.images?.[0]}
-              afterImage={report.resolutionImages[0]}
-              resolutionNotes={report.resolutionNotes}
-              resolvedAt={report.resolvedAt}
-              agencyName={report.assignedTo?.name}
-            />
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-amber-600" />
+                  Resolution Evidence
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 px-1">Before</p>
+                  <img src={report.imageUrl || report.images?.[0] || FALLBACK_IMAGE} alt="Before" onError={(e) => { e.target.src = FALLBACK_IMAGE; }} className="h-52 w-full object-cover rounded-xl" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600 mb-2 px-1">After</p>
+                  <img src={report.resolutionImages[0]} alt="After" onError={(e) => { e.target.src = FALLBACK_IMAGE; }} className="h-52 w-full object-cover rounded-xl" />
+                </div>
+              </div>
+              {report.resolutionNotes && (
+                <p className="px-6 pb-6 text-sm text-slate-600 leading-relaxed">{report.resolutionNotes}</p>
+              )}
+            </div>
           )}
 
           {/* Agency Action Card */}
@@ -322,8 +332,6 @@ export default function AgencyReportDetails() {
               ))}
             </div>
           </motion.div>
-          
-          <DiscussionSection reportId={id} />
         </div>
 
         {/* Right Column */}

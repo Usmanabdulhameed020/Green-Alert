@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
-  User,
   Shield,
   Trophy,
   Calendar,
@@ -20,14 +19,12 @@ import axios from 'axios';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, token, reports, points } = useCitizen();
+  const { user, token, reports, points = 0 } = useCitizen();
 
   // Password Modal states
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [step, setStep] = useState(1); // 1 = request, 2 = verify & change
-  const [verificationCode, setVerificationCode] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [loadingCode, setLoadingCode] = useState(false);
   const [loadingChange, setLoadingChange] = useState(false);
   const [modalError, setModalError] = useState('');
   const [modalSuccess, setModalSuccess] = useState('');
@@ -41,32 +38,9 @@ export default function ProfilePage() {
     return user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const handleRequestCode = async () => {
-    setLoadingCode(true);
-    setModalError('');
-    setModalSuccess('');
-    try {
-      const res = await axios.post(
-        '/api/v1/auth/request-password-change-code',
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data?.success) {
-        setStep(2);
-        setModalSuccess('Verification code sent to your email.');
-      } else {
-        setModalError(res.data?.message || 'Failed to send verification code.');
-      }
-    } catch (err) {
-      setModalError(err.response?.data?.message || 'Failed to request verification code.');
-    } finally {
-      setLoadingCode(false);
-    }
-  };
-
-  const handleVerifyAndChange = async (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (!verificationCode || !newPassword) {
+    if (!currentPassword || !newPassword) {
       setModalError('All fields are required.');
       return;
     }
@@ -79,21 +53,19 @@ export default function ProfilePage() {
     setModalError('');
     setModalSuccess('');
     try {
-      const res = await axios.post(
-        '/api/v1/auth/verify-password-change-code',
-        { code: verificationCode, newPassword },
+      const res = await axios.patch(
+        '/api/v1/auth/me/password',
+        { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data?.success) {
         setModalSuccess('Password changed successfully!');
         setTimeout(() => {
           setShowPasswordModal(false);
-          // Reset modal states
-          setStep(1);
-          setVerificationCode('');
+          setCurrentPassword('');
           setNewPassword('');
           setModalSuccess('');
-        }, 2000);
+        }, 1500);
       } else {
         setModalError(res.data?.message || 'Failed to change password.');
       }
@@ -237,7 +209,8 @@ export default function ProfilePage() {
             <button
               onClick={() => {
                 setShowPasswordModal(true);
-                setStep(1);
+                setCurrentPassword('');
+                setNewPassword('');
                 setModalError('');
                 setModalSuccess('');
               }}
@@ -287,66 +260,40 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {step === 1 ? (
-                <div className="space-y-4">
-                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                    To update your password, we need to send a 6-digit confirmation code to your registered email: <strong>{user?.email}</strong>.
-                  </p>
-                  <button
-                    onClick={handleRequestCode}
-                    disabled={loadingCode}
-                    className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl cursor-pointer transition-all shadow-md"
-                  >
-                    {loadingCode && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {loadingCode ? 'Requesting Code...' : 'Send Verification Code'}
-                  </button>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Current Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Enter your current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl py-2 px-3.5 text-xs font-semibold outline-none"
+                  />
                 </div>
-              ) : (
-                <form onSubmit={handleVerifyAndChange} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Verification Code</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Enter 6-digit code"
-                      maxLength={6}
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl py-2 px-3.5 text-xs font-semibold outline-none tracking-widest text-center"
-                    />
-                  </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">New Password</label>
-                    <input
-                      type="password"
-                      required
-                      placeholder="At least 6 characters"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl py-2 px-3.5 text-xs font-semibold outline-none"
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">New Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="At least 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl py-2 px-3.5 text-xs font-semibold outline-none"
+                  />
+                </div>
 
-                  <div className="flex gap-2.5 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="flex-1 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold rounded-xl cursor-pointer"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loadingChange}
-                      className="flex-[2] flex items-center justify-center gap-1.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl cursor-pointer transition-all shadow-md"
-                    >
-                      {loadingChange && <Loader2 className="h-4 w-4 animate-spin" />}
-                      Verify & Change
-                    </button>
-                  </div>
-                </form>
-              )}
+                <button
+                  type="submit"
+                  disabled={loadingChange}
+                  className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl cursor-pointer transition-all shadow-md"
+                >
+                  {loadingChange && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {loadingChange ? 'Changing Password...' : 'Change Password'}
+                </button>
+              </form>
             </motion.div>
           </div>
         )}

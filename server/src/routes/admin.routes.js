@@ -1,8 +1,6 @@
 const express = require('express');
 const {
   getStats,
-  getAllReports,
-  getReportById,
   assignReport,
   getUsers,
   deleteUser,
@@ -13,17 +11,12 @@ const {
   verifyOrganization,
   deleteOrganization,
 } = require('../controllers/admin.controller');
+const { getAllReports, getReportById } = require('../controllers/report.controller');
 const { protect, authorize } = require('../middlewares/auth.middleware');
-
-/**
- * @swagger
- * tags:
- *   name: Admin
- *   description: Admin management endpoints
- */
 
 const router = express.Router();
 
+// Every admin route requires a logged-in admin
 router.use(protect);
 router.use(authorize('admin'));
 

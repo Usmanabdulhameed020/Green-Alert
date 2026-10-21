@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GreenAlert — Complete Server Codebase Deep Dive (Every File, Every Function Explained)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0f1a;
+    --surface: #111827;
+    --surface2: #1a2332;
+    --border: #1f2937;
+    --text: #e5e7eb;
+    --text-dim: #9ca3af;
+    --green: #10b981;
+    --green-dim: #065f46;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --cyan: #06b6d4;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 0;
+  }
+
+  /* ───── Hero ───── */
+  .hero {
+    background: linear-gradient(135deg, #064e3b 0%, #0a0f1a 60%, #1e1b4b 100%);
+    padding: 60px 40px;
+    text-align: center;
+    border-bottom: 2px solid var(--green);
+  }
+  .hero h1 {
+    font-size: 2.8rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .hero p { color: var(--text-dim); font-size: 1.15rem; max-width: 800px; margin: 0 auto; }
+
+  .print-btn {
+    display: inline-block; margin-top: 24px; padding: 14px 32px;
+    background: linear-gradient(135deg, var(--green), var(--blue));
+    color: #fff; font-weight: 700; font-size: 1rem;
+    border: none; border-radius: 10px; cursor: pointer;
+    text-decoration: none;
+  }
+  .print-btn:hover { opacity: .9; }
+
+  /* ───── Content ───── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+  /* ── Table of Contents ── */
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px; margin-bottom: 48px; }
+  .toc h2 { font-size: 1.4rem; color: var(--green); margin-bottom: 16px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin-bottom: 6px; }
+  .toc a { color: var(--blue); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 56px; }
+  .section-title {
+    font-size: 1.8rem; font-weight: 800; margin-bottom: 8px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--green);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-title .badge {
+    font-size: .7rem; font-weight: 700; padding: 3px 10px;
+    border-radius: 6px; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .badge-config { background: var(--purple); color: #fff; }
+  .badge-controller { background: var(--blue); color: #fff; }
+  .badge-service { background: var(--cyan); color: #fff; }
+  .badge-middleware { background: var(--amber); color: #000; }
+  .badge-model { background: var(--red); color: #fff; }
+  .badge-util { background: #6b7280; color: #fff; }
+
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+  }
+  .file-card h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem; font-weight: 600; color: var(--green);
+    margin-bottom: 4px;
+  }
+  .file-card .purpose {
+    font-style: italic; color: var(--text-dim); margin-bottom: 16px; font-size: .95rem;
+  }
+
+  .func {
+    background: var(--surface2);
+    border-left: 3px solid var(--blue);
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    border-radius: 0 8px 8px 0;
+  }
+  .func h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .95rem; color: var(--amber); margin-bottom: 6px;
+  }
+  .func p { font-size: .9rem; color: var(--text); }
+  .func .detail { color: var(--text-dim); font-size: .85rem; margin-top: 6px; }
+
+  .key-point {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 8px; font-size: .92rem;
+  }
+  .key-point .icon { flex-shrink: 0; font-size: 1rem; }
+
+  /* ── Data flow diagram ── */
+  .flow-box {
+    background: linear-gradient(135deg, var(--surface), var(--surface2));
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px 28px; margin: 20px 0;
+    font-family: 'JetBrains Mono', monospace; font-size: .85rem;
+    color: var(--cyan); line-height: 2;
+  }
+
+  @media print {
+    body { background: #fff; color: #111; }
+    .hero { background: #f0fdf4 !important; border-bottom: 2px solid #10b981; }
+    .hero h1 { -webkit-text-fill-color: #047857 !important; }
+    .print-btn { display: none; }
+    .file-card, .toc, .func, .flow-box { border-color: #d1d5db; background: #f9fafb !important; }
+    .section-title { border-color: #10b981; }
+    a { color: #2563eb; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <h1>🌿 GreenAlert — Complete Server Codebase Deep Dive</h1>
+  <p>Every single file. Every single function. Every single line of logic — explained exhaustively so you can defend your project in any presentation or emergency Q&A session.</p>
+  <button class="print-btn" onclick="window.print()">📄 Download as PDF / Print This Document</button>
+</div>
+
+<div class="container">
+
+<!-- ═══════════ TABLE OF CONTENTS ═══════════ -->
+<div class="toc">
+  <h2>📑 Table of Contents</h2>
+  <ol>
+    <li><a href="#s1">server.js — The Main Entry Point</a></li>
+    <li><a href="#s2">app.js — Express Application & Middleware Pipeline</a></li>
+    <li><a href="#s3">Config Files (database, env, adminSeed, gemini, cloudinary, brevo, push, swagger, achievements)</a></li>
+    <li><a href="#s4">Models (User, Report, Organization, Notification, Community, Post, Reply, Poll, PushSubscription, Settings)</a></li>
+    <li><a href="#s5">Middlewares (auth, rateLimit, sanitize)</a></li>
+    <li><a href="#s6">Services (ai.service, email.service, socket.service, push.service, gamification.service)</a></li>
+    <li><a href="#s7">Controllers — auth.controller.js (Registration, Login, JWT, Password Reset, Achievements)</a></li>
+    <li><a href="#s8">Controllers — auth.google.controller.js (Google OAuth)</a></li>
+    <li><a href="#s9">Controllers — admin.controller.js (Platform Administration)</a></li>
+    <li><a href="#s10">Controllers — agency.controller.js (Agency Operations)</a></li>
+    <li><a href="#s11">Controllers — report.controller.js (Incident Reports CRUD)</a></li>
+    <li><a href="#s12">Controllers — ai.controller.js (Gemini AI Analysis & Duplicate Detection)</a></li>
+    <li><a href="#s13">Controllers — chat.controller.js (AI Chatbot Assistant)</a></li>
+    <li><a href="#s14">Controllers — community, post, reply, poll, comment, notification, system, health</a></li>
+    <li><a href="#s15">Complete Request Lifecycle — How a Report Flows Through the System</a></li>
+    <li><a href="#s16">Logger Utility (Winston)</a></li>
+    <li><a href="#s17"><strong>🔗 WIRING MAP: Route → Middleware → Controller → Service → Model</strong></a></li>
+    <li><a href="#s18"><strong>🗺️ MODEL DEPENDENCY MAP — Which File Uses Which Model</strong></a></li>
+    <li><a href="#s19"><strong>🏗️ FULL ARCHITECTURE — How Frontend Connects to Backend</strong></a></li>
+    <li><a href="#s20"><strong>📂 COMPLETE FILE MANIFEST — Every Single File & Function in the Project</strong></a></li>
+  </ol>
+</div>
+
+<!-- ═══════════ SECTION 1: server.js ═══════════ -->
+<div class="section" id="s1">
+  <h2 class="section-title">1. server.js <span class="badge badge-config">Entry Point</span></h2>
+  <div class="file-card">
+    <h3>server/src/server.js</h3>
+    <p class="purpose">This is the very first file that runs when you type <code>npm start</code>. It boots the entire application.</p>
+
+    <div class="func">
+      <h4>require('dotenv').config()</h4>
+      <p>Loads all environment variables from your <code>.env</code> file into <code>process.env</code>. This MUST be the first line so that every other file can access secrets like <code>MONGODB_URI</code>, <code>JWT_SECRET</code>, <code>GEMINI_API_KEY</code>, etc.</p>
+    </div>
+
+    <div class="func">
+      <h4>require('./config/env')</h4>
+      <p>Runs the <strong>envalid</strong> validation module. It checks that every required environment variable exists and has the correct type. If <code>MONGODB_URI</code> or <code>JWT_SECRET</code> is missing, <strong>the server will crash immediately with a clear error</strong> instead of failing silently later.</p>
+    </div>
+
+    <div class="func">
+      <h4>const server = http.createServer(app)</h4>
+      <p>Creates a raw Node.js HTTP server wrapping the Express app. <strong>Why not just <code>app.listen()</code>?</strong> Because Socket.IO needs a raw HTTP server reference to attach WebSockets. Express's built-in <code>app.listen()</code> hides the server object, so we create it manually.</p>
+    </div>
+
+    <div class="func">
+      <h4>new Server(server, { cors: {...} })</h4>
+      <p>Initializes <strong>Socket.IO</strong> on top of the same HTTP server. The <code>cors</code> option allows the React frontend (running on <code>localhost:5173</code> or your Vercel URL) to establish WebSocket connections. Without this, the browser would block the connection.</p>
+    </div>
+
+    <div class="func">
+      <h4>initSocket(io)</h4>
+      <p>Passes the Socket.IO instance to <code>socket.service.js</code> which sets up event listeners for <code>join-user</code>, <code>join-agency</code>, <code>join-admin</code>, etc. This enables real-time notifications.</p>
+    </div>
+
+    <div class="func">
+      <h4>startServer() — async function</h4>
+      <p>The boot sequence:</p>
+      <p class="detail">
+        1️⃣ <code>await connectDB()</code> — Connects to MongoDB Atlas. If this fails, the server crashes (no point running without a database).<br>
+        2️⃣ <code>await seedAdmin()</code> — Checks if an admin account exists. If not, creates one using <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD</code> from .env.<br>
+        3️⃣ <code>server.listen(PORT)</code> — Starts accepting HTTP requests on port 5000.
+      </p>
+    </div>
+
+    <div class="func">
+      <h4>shutdown(signal) — Graceful Shutdown Handler</h4>
+      <p>Listens for <code>SIGINT</code> (Ctrl+C) and <code>SIGTERM</code> (server kill signal). When received:</p>
+      <p class="detail">
+        1️⃣ Stops accepting new HTTP connections.<br>
+        2️⃣ Disconnects from MongoDB cleanly (prevents data corruption).<br>
+        3️⃣ Force-kills the process after 10 seconds if graceful shutdown hangs.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 2: app.js ═══════════ -->
+<div class="section" id="s2">
+  <h2 class="section-title">2. app.js <span class="badge badge-config">Express Pipeline</span></h2>
+  <div class="file-card">
+    <h3>server/src/app.js</h3>
+    <p class="purpose">This file creates the Express application and wires up ALL middleware and ALL routes. Think of it as the "wiring diagram" of the entire backend.</p>
+
+    <div class="func">
+      <h4>Rate Limiting — app.use('/api', apiLimiter)</h4>
+      <p>Limits every client to <strong>100 requests per 15 minutes</strong> across all API endpoints. Prevents brute-force attacks and abuse.</p>
+      <p class="detail"><code>authLimiter</code> is stricter — applied specifically to <code>/login</code> and <code>/register</code> (20 requests per 15 min in production) to prevent password brute-force.</p>
+    </div>
+
+    <div class="func">
+      <h4>Service Initialization (Lines 40–47)</h4>
+      <p>
+        • <code>cloudinaryConfig.configureCloudinary()</code> — Connects to Cloudinary for image/video uploads.<br>
+        • <code>brevoConfig.configureBrevo()</code> — Initializes the Brevo (Sendinblue) email API client.<br>
+        • <code>pushConfig.configurePush()</code> — Validates VAPID keys for browser push notifications.<br>
+        • <code>geminiConfig.configureGemini()</code> — Runs in background; queries Google's API to discover the best available AI model (prefers <code>gemini-2.0-flash</code>).
+      </p>
+    </div>
+
+    <div class="func">
+      <h4>CORS — Cross-Origin Resource Sharing (Lines 50–68)</h4>
+      <p><strong>What it does</strong>: Controls which websites are allowed to call your backend API.</p>
+      <p class="detail">
+        • Any <code>localhost</code> or <code>127.0.0.1</code> origin is allowed (for development).<br>
+        • Your Vercel production URL (<code>https://greenalert001.vercel.app</code>) is whitelisted.<br>
+        • <code>credentials: true</code> allows cookies (JWT tokens) to be sent cross-origin.<br>
+        • Any other origin gets rejected with <code>"Not allowed by CORS"</code>.
+      </p>
+    </div>
+
+    <div class="func">
+      <h4>Body Parsers — express.json() & express.urlencoded()</h4>
+      <p><code>express.json()</code> parses incoming JSON request bodies (e.g., when the frontend sends <code>{ title: "Blocked drain", ... }</code>).</p>
+      <p><code>express.urlencoded({ extended: true })</code> parses HTML form submissions.</p>
+    </div>
+
+    <div class="func">
+      <h4>Security Middleware</h4>
+      <p>
+        • <code>helmet()</code> — Adds 15+ security HTTP headers: <code>X-Frame-Options</code> (prevents clickjacking), <code>X-Content-Type-Options</code> (prevents MIME sniffing), <code>Content-Security-Policy</code>, etc.<br>
+        • <code>sanitize</code> — Custom middleware that strips any MongoDB injection operators (<code>$gt</code>, <code>$ne</code>, etc.) from request bodies. Without this, an attacker could send <code>{ "email": { "$gt": "" } }</code> to bypass login checks.<br>
+        • <code>compression()</code> — Gzip-compresses all HTTP responses, reducing payload size by ~70%.
+      </p>
+    </div>
+
+    <div class="func">
+      <h4>Morgan — HTTP Request Logger (Lines 79–81)</h4>
+      <p>Logs every incoming HTTP request in Apache Combined format. Pipes output through Winston logger so requests appear in both console and log files.</p>
+    </div>
+
+    <div class="func">
+      <h4>Swagger API Documentation (Lines 87–90)</h4>
+      <p>Serves interactive API documentation at <code>/api/docs</code>. Auto-generated from JSDoc comments in route files.</p>
+    </div>
+
+    <div class="func">
+      <h4>Route Registration (Lines 92–127)</h4>
+      <p><strong>Every route is registered on BOTH <code>/api/</code> and <code>/api/v1/</code></strong> for reliability (some frontend components use different prefixes).</p>
+      <p class="detail">
+        15 route groups are registered:<br>
+        <code>auth</code> • <code>auth (google)</code> • <code>health</code> • <code>reports</code> • <code>notifications</code> • <code>upload</code> • <code>communities</code> • <code>posts</code> • <code>replies</code> • <code>polls</code> • <code>admin</code> • <code>agency</code> • <code>push</code> • <code>system</code> • <code>chat</code>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 3: Config Files ═══════════ -->
+<div class="section" id="s3">
+  <h2 class="section-title">3. Config Files <span class="badge badge-config">Configuration</span></h2>
+
+  <div class="file-card">
+    <h3>config/database.js</h3>
+    <p class="purpose">Handles MongoDB Atlas connection with custom timeout settings.</p>
+    <div class="func">
+      <h4>connectDB()</h4>
+      <p>Connects to MongoDB using <code>MONGODB_URI</code> from .env. Uses 3 timeout values: <code>serverSelectionTimeoutMS: 45000</code> (wait up to 45s to find a server), <code>connectTimeoutMS: 30000</code>, <code>socketTimeoutMS: 45000</code>. These generous timeouts handle slow cold-starts on free-tier Atlas clusters.</p>
+    </div>
+    <div class="func">
+      <h4>getStatus()</h4>
+      <p>Returns human-readable connection state: <code>"connected"</code>, <code>"disconnected"</code>, <code>"connecting"</code>, or <code>"disconnecting"</code>. Used by the health check endpoint.</p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>config/env.js</h3>
+    <p class="purpose">Environment variable validation using the <strong>envalid</strong> library.</p>
+    <div class="func">
+      <h4>envalid.cleanEnv(process.env, schema)</h4>
+      <p>Validates every .env variable at startup. <strong>Required vars</strong>: <code>MONGODB_URI</code>, <code>JWT_SECRET</code>. <strong>Optional with defaults</strong>: <code>PORT</code> (5000), <code>JWT_EXPIRES_IN</code> (700d), <code>BCRYPT_SALT_ROUNDS</code> (12), all Cloudinary/Brevo/VAPID keys (default empty string). If a required variable is missing, the process exits with code 1 and a clear error message.</p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>config/adminSeed.js</h3>
+    <p class="purpose">Auto-creates the platform administrator account on first server boot.</p>
+    <div class="func">
+      <h4>seedAdmin()</h4>
+      <p><strong>Boot-time logic</strong>:</p>
+      <p class="detail">
+        1️⃣ Reads <code>ADMIN_EMAIL</code> and <code>ADMIN_PASSWORD</code> from .env.<br>
+        2️⃣ If they're empty, skips seeding (no admin created).<br>
+        3️⃣ Checks if a user with that email already exists.<br>
+        4️⃣ If user exists but isn't an admin → promotes to admin role.<br>
+        5️⃣ If password changed in .env → updates the password hash.<br>
+        6️⃣ If no user exists → creates a new admin account with <code>role: 'admin'</code> and <code>isVerified: true</code>.
+      </p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>config/gemini.js</h3>
+    <p class="purpose">Configures Google Generative AI (Gemini) and dynamically resolves the best available model.</p>
+    <div class="func">
+      <h4>configureGemini()</h4>
+      <p>At startup, queries <code>https://generativelanguage.googleapis.com/v1beta/models</code> to list all models available for your API key. Filters for models supporting <code>generateContent</code>. Picks the best one in priority order: <code>gemini-2.0-flash</code> → <code>gemini-1.5-flash</code> → <code>gemini-1.5-pro</code>. Skips deprecated <code>gemini-2.5-flash</code>. Stores the chosen model name in <code>activeModelName</code>.</p>
+    </div>
+    <div class="func">
+      <h4>getGenAIInstance() / getActiveModelName() / checkStatus()</h4>
+      <p>Helper functions to retrieve the AI client, the resolved model name, and connectivity status (used by health check).</p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>config/achievements.js</h3>
+    <p class="purpose">Defines the gamification achievement ladder.</p>
+    <div class="func">
+      <h4>8 Achievement Definitions</h4>
+      <p class="detail">
+        <strong>Report-based</strong>: First Report Alert (1), Active Sentinel (5), Community Guardian (10), Eco Champion (25).<br>
+        <strong>Resolution-based</strong>: Problem Solver (1 resolved), Impact Maker (5 resolved).<br>
+        <strong>XP-based</strong>: Eco Hero Badge (200 XP), GreenAlert Legend (500 XP).
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 4: Models ═══════════ -->
+<div class="section" id="s4">
+  <h2 class="section-title">4. Mongoose Models <span class="badge badge-model">Database Schema</span></h2>
+
+  <div class="file-card">
+    <h3>models/User.js</h3>
+    <p class="purpose">Defines the schema for every user account in the system (citizens, agencies, and admins).</p>
+    <div class="func">
+      <h4>Schema Fields (18 fields)</h4>
+      <p class="detail">
+        <code>fullName</code> (required, trimmed) • <code>email</code> (required, unique, lowercase) • <code>phone</code> (optional) • <code>password</code> (required, min 6 chars, <strong>select: false</strong> — never returned in queries unless explicitly requested) • <code>role</code> (enum: citizen/agency/admin, default: citizen) • <code>isVerified</code> (boolean) • <code>avatar</code> (Cloudinary URL) • <code>organizationId</code> (ObjectId ref to Organization) • <code>passwordChangeCode</code> + <code>passwordChangeCodeExpires</code> (for forgot-password flow) • <code>emailVerificationCode</code> + <code>emailVerificationCodeExpires</code> • <code>status</code> (active/banned) • <code>banReason</code> + <code>bannedAt</code> + <code>bannedBy</code> • <code>xp</code> (gamification points, default 120) • <code>unlockedAchievements</code> (array of achievement IDs) • <code>settings</code> (embedded notification/privacy preferences)
+      </p>
+    </div>
+    <div class="func">
+      <h4>pre('save') Hook — Password Hashing</h4>
+      <p>Runs <strong>before every save</strong>. If the password field was modified, it hashes it using <code>bcrypt</code> with the salt rounds from <code>BCRYPT_SALT_ROUNDS</code> .env (default 12). This means <strong>plain-text passwords are NEVER stored in the database</strong>.</p>
+    </div>
+    <div class="func">
+      <h4>comparePassword(candidatePassword)</h4>
+      <p>Instance method. Takes a plain-text password candidate, hashes it with the same salt, and compares against the stored hash. Returns <code>true</code> if they match. Used during login.</p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>models/Report.js</h3>
+    <p class="purpose">The core data model — represents a single environmental incident report.</p>
+    <div class="func">
+      <h4>Schema Fields (20+ fields)</h4>
+      <p class="detail">
+        <code>title</code> • <code>description</code> • <code>location</code> (text address) • <code>latitude</code> / <code>longitude</code> (GPS coords) • <code>category</code> (Illegal Dumping, Blocked Drainage, etc.) • <code>status</code> (enum: Submitted → Under Review → Assigned → In Progress → Resolved → Closed) • <code>priority</code> (Low/Medium/High/Critical) • <code>user</code> (ref to User who created it) • <code>assignedTo</code> (ref to Organization) • <code>imageUrl</code> + <code>images[]</code> (Cloudinary URLs) • <code>aiCategory</code> / <code>aiSummary</code> / <code>aiSeverity</code> / <code>aiDuplicateOf</code> / <code>aiSuggestedOrg</code> / <code>aiAnalyzed</code> (AI analysis results) • <code>comments[]</code> (embedded subdocuments with nested replies) • <code>resolutionImages[]</code> + <code>resolutionNotes</code> (agency proof) • <code>resolvedAt</code> (timestamp)
+      </p>
+    </div>
+    <div class="func">
+      <h4>Embedded Comment & Reply Schemas</h4>
+      <p><code>commentSchema</code> has fields: <code>user</code> (ref), <code>text</code> (max 2000 chars), <code>replies[]</code> (array of replySchema). <code>replySchema</code> has: <code>user</code> (ref), <code>text</code>. Both have <code>timestamps: true</code>. This means comments are stored <strong>inside</strong> the Report document (embedded), not in a separate collection.</p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>models/Organization.js</h3>
+    <p class="purpose">Represents a responding agency/organization that handles environmental reports.</p>
+    <div class="func">
+      <h4>Schema Fields</h4>
+      <p class="detail">
+        <code>name</code> (unique) • <code>description</code> • <code>email</code> • <code>phone</code> • <code>address</code> • <code>website</code> • <code>category</code> (enum: Waste Management, Drainage & Flood Control, Oil & Chemical Spill Response, Air Quality Management, Water Treatment, Parks & Forestry, Roads & Infrastructure, Multi-Purpose) • <code>licenseNumber</code> + <code>licenseDocument</code> (uploaded PDF) • <code>verified</code> (boolean — must be approved by admin) • <code>status</code> (Active/Inactive/Suspended) • <code>user</code> (ref to the agency's User account)
+      </p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>models/Settings.js</h3>
+    <p class="purpose">Singleton document for platform-wide admin settings.</p>
+    <div class="func">
+      <h4>Fields</h4>
+      <p><code>maintenanceMode</code> (boolean) • <code>maintenanceMessage</code> (string) • <code>announcementEnabled</code> (boolean) • <code>announcementMessage</code> (string). The <code>getSettings()</code> helper finds the single settings document or creates one with defaults if none exists.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 5: Middlewares ═══════════ -->
+<div class="section" id="s5">
+  <h2 class="section-title">5. Middlewares <span class="badge badge-middleware">Security Layer</span></h2>
+
+  <div class="file-card">
+    <h3>middlewares/auth.middleware.js</h3>
+    <p class="purpose">Protects routes and enforces role-based access control.</p>
+    <div class="func">
+      <h4>protect(req, res, next)</h4>
+      <p><strong>The gatekeeper</strong>. Runs before every protected route. Steps:</p>
+      <p class="detail">
+        1️⃣ Extracts JWT token from cookies (<code>req.cookies.token</code>) OR from Authorization header (<code>Bearer xxx</code>).<br>
+        2️⃣ If no token → returns 401 "You are not logged in".<br>
+        3️⃣ Verifies the token signature using <code>JWT_SECRET</code>. If tampered or expired → 401.<br>
+        4️⃣ Loads the full User document from MongoDB using the decoded user ID.<br>
+        5️⃣ If user no longer exists → 401 "user does no longer exist".<br>
+        6️⃣ If user status is <code>"banned"</code> → 403 "Account suspended".<br>
+        7️⃣ If maintenance mode is ON and user is NOT admin → 503 "Under maintenance".<br>
+        8️⃣ Attaches user to <code>req.user</code> and calls <code>next()</code>.
+      </p>
+    </div>
+    <div class="func">
+      <h4>authorize(...roles)</h4>
+      <p>Returns a middleware that checks if <code>req.user.role</code> is in the allowed roles array. Example: <code>authorize('admin')</code> blocks citizens and agencies. Returns 403 if unauthorized.</p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>middlewares/rateLimit.middleware.js</h3>
+    <p class="purpose">Prevents API abuse using express-rate-limit.</p>
+    <div class="func">
+      <h4>apiLimiter / authLimiter</h4>
+      <p><code>apiLimiter</code>: 100 requests per 15 minutes for all API routes. <code>authLimiter</code>: 20 requests per 15 minutes for login/register (production only). <strong>Local development is exempt</strong> — the <code>skip</code> function detects <code>localhost</code>/<code>127.0.0.1</code> and bypasses limits.</p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>middlewares/sanitize.middleware.js</h3>
+    <p class="purpose">Prevents NoSQL injection attacks on MongoDB.</p>
+    <div class="func">
+      <h4>sanitizeValue(obj)</h4>
+      <p>Recursively walks through every key in <code>req.body</code>. Deletes any key starting with <code>$</code> (MongoDB operators like <code>$gt</code>, <code>$ne</code>, <code>$regex</code>) or containing <code>.</code> (dot notation attacks). Without this, an attacker could send <code>{"password": {"$gt": ""}}</code> to bypass authentication.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 6: Services ═══════════ -->
+<div class="section" id="s6">
+  <h2 class="section-title">6. Services <span class="badge badge-service">Business Logic Layer</span></h2>
+
+  <div class="file-card">
+    <h3>services/ai.service.js</h3>
+    <p class="purpose">Reusable Gemini AI text generation with automatic multi-model failover.</p>
+    <div class="func">
+      <h4>generateText(prompt)</h4>
+      <p><strong>The AI engine</strong>. Creates a unique model fallback chain: [dynamically resolved model] → <code>gemini-2.0-flash</code> → <code>gemini-1.5-flash</code> → <code>gemini-1.5-pro</code> → <code>gemini-pro</code>. Tries each model in sequence. If one is rate-limited or errors, it silently moves to the next. Only throws an error if ALL models fail. This ensures maximum AI availability.</p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>services/socket.service.js</h3>
+    <p class="purpose">Socket.IO real-time WebSocket event management.</p>
+    <div class="func">
+      <h4>initSocket(io) — Room-based Architecture</h4>
+      <p>When a client connects, they join specific "rooms" based on their role:</p>
+      <p class="detail">
+        • <code>join-user</code> → joins <code>user:{userId}</code> room (for personal notifications).<br>
+        • <code>join-agency</code> → joins <code>agency:{orgId}</code> room (for agency-specific alerts).<br>
+        • <code>join-admin</code> → joins <code>admins</code> room (for system-wide admin alerts).<br>
+        • <code>join-report</code> → joins <code>report:{reportId}</code> room (for live comments/replies).<br>
+        Also handles typing indicators with auto-timeout after 3 seconds of inactivity.
+      </p>
+    </div>
+    <div class="func">
+      <h4>Emit Functions (6 event emitters)</h4>
+      <p class="detail">
+        • <code>emitReportAssigned(report)</code> → sends to agency room + admins room + citizen room.<br>
+        • <code>emitReportStatusChanged(report)</code> → sends to citizen + agency + admins.<br>
+        • <code>emitNewReport(report)</code> → sends to admins only.<br>
+        • <code>emitReportComment(reportId, comment)</code> → sends to everyone viewing that report.<br>
+        • <code>emitReportReply(reportId, commentId, reply)</code> → same as above.<br>
+        • <code>emitNotification(notification)</code> → sends to the specific user's room.
+      </p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>services/push.service.js</h3>
+    <p class="purpose">Free browser push notifications via Web Push API (VAPID protocol). No paid service needed.</p>
+    <div class="func">
+      <h4>sendPushToUser(userId, title, body, url)</h4>
+      <p><strong>How it works</strong>:</p>
+      <p class="detail">
+        1️⃣ Queries <code>PushSubscription</code> collection for all active subscriptions belonging to this user (one per device/browser).<br>
+        2️⃣ Configures VAPID credentials using <code>VAPID_PUBLIC_KEY</code> and <code>VAPID_PRIVATE_KEY</code> from .env.<br>
+        3️⃣ Encrypts the notification payload (title, body, icon, URL).<br>
+        4️⃣ Sends to each subscription endpoint via <code>web-push.sendNotification()</code>.<br>
+        5️⃣ If a subscription returns 410 (Gone) or 404, it's expired → auto-deletes from DB.<br>
+        6️⃣ Returns the count of successful deliveries.
+      </p>
+    </div>
+    <div class="func">
+      <h4>sendPushToAdmins(title, body, url)</h4>
+      <p>Finds all users with <code>role: 'admin'</code> and calls <code>sendPushToUser()</code> for each one.</p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>services/gamification.service.js</h3>
+    <p class="purpose">XP rewards and achievement unlock engine.</p>
+    <div class="func">
+      <h4>awardXP(userId, amount)</h4>
+      <p>Adds <code>amount</code> XP to the user's <code>xp</code> field. Then calls <code>checkAndUnlockAchievements()</code> to see if they've earned any new badges.</p>
+    </div>
+    <div class="func">
+      <h4>checkAndUnlockAchievements(user)</h4>
+      <p>Counts the user's total reports and resolved reports from MongoDB. Then loops through all 8 achievements and checks if the user meets each requirement. Newly unlocked achievement IDs are pushed to <code>user.unlockedAchievements[]</code> and saved.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 7: Auth Controller ═══════════ -->
+<div class="section" id="s7">
+  <h2 class="section-title">7. auth.controller.js <span class="badge badge-controller">Authentication</span></h2>
+  <div class="file-card">
+    <h3>controllers/auth.controller.js (578 lines)</h3>
+    <p class="purpose">Handles ALL authentication: register, login, logout, password reset, email verification, profile management, achievements, and leaderboard.</p>
+
+    <div class="func">
+      <h4>signToken(user) → JWT Token Creation</h4>
+      <p>Creates a JWT containing <code>{ id, email, role }</code>. Signed with <code>JWT_SECRET</code>. Expires after <code>JWT_EXPIRES_IN</code> (default 700 days). This token is the user's "session key".</p>
+    </div>
+
+    <div class="func">
+      <h4>createSendToken(user, statusCode, res, message)</h4>
+      <p>Helper that: 1️⃣ Signs a JWT, 2️⃣ Sets it as an HTTP-only cookie (prevents XSS theft), 3️⃣ Returns the token + user data in the JSON response. <strong>HTTP-only cookies</strong> mean JavaScript cannot read the token — only the browser sends it automatically.</p>
+    </div>
+
+    <div class="func">
+      <h4>register(req, res)</h4>
+      <p>1️⃣ Validates input using express-validator. 2️⃣ Blocks <code>ADMIN_EMAIL</code> from registering (reserved). 3️⃣ Checks for duplicate email. 4️⃣ Creates user (password auto-hashed by pre-save hook). 5️⃣ Sends welcome email via Brevo (in background). 6️⃣ Returns JWT + user data.</p>
+    </div>
+
+    <div class="func">
+      <h4>login(req, res)</h4>
+      <p>1️⃣ Finds user by email (with <code>.select('+password')</code> to include the normally-hidden password hash). 2️⃣ Compares password with bcrypt. 3️⃣ Checks if banned → 403. 4️⃣ Checks maintenance mode (non-admins blocked) → 503. 5️⃣ If agency role → checks if organization is verified by admin → 403 if not. 6️⃣ Issues JWT.</p>
+    </div>
+
+    <div class="func">
+      <h4>registerOrg(req, res)</h4>
+      <p>Registers a new agency organization. 1️⃣ Creates a User with <code>role: 'agency'</code>. 2️⃣ Uploads license document to Cloudinary. 3️⃣ Creates Organization document linked to user. 4️⃣ Sets <code>verified: false</code> (must wait for admin approval). Returns JWT but the agency <strong>cannot log in</strong> until an admin verifies them.</p>
+    </div>
+
+    <div class="func">
+      <h4>requestPasswordChangeCode(req, res)</h4>
+      <p>Generates a random 6-digit code, stores it on the user with a 10-minute expiry, and emails it via Brevo.</p>
+    </div>
+
+    <div class="func">
+      <h4>verifyPasswordChangeCode(req, res)</h4>
+      <p>Verifies the 6-digit code matches and hasn't expired. If valid, updates the password (which triggers bcrypt re-hashing via pre-save hook).</p>
+    </div>
+
+    <div class="func">
+      <h4>getLeaderboard(req, res)</h4>
+      <p>Queries top 50 citizens sorted by XP descending. Aggregates report counts per user. Returns ranked leaderboard with avatar, XP, report count, and achievement count.</p>
+    </div>
+
+    <div class="func">
+      <h4>checkAchievements(req, res)</h4>
+      <p>Evaluates all 8 achievements for the current user. Returns newly unlocked + full achievement list with unlock status.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 8: Google Auth ═══════════ -->
+<div class="section" id="s8">
+  <h2 class="section-title">8. auth.google.controller.js <span class="badge badge-controller">Google OAuth</span></h2>
+  <div class="file-card">
+    <h3>controllers/auth.google.controller.js</h3>
+    <div class="func">
+      <h4>googleLogin(req, res)</h4>
+      <p>1️⃣ Receives Google <code>accessToken</code> from frontend. 2️⃣ Calls Google's <code>https://www.googleapis.com/oauth2/v3/userinfo</code> API to get verified user info (email, name, picture). 3️⃣ If user exists → checks ban status, updates avatar, issues JWT. 4️⃣ If new user → creates account with <code>role: 'citizen'</code>, <code>isVerified: true</code>, and a random password (they'll use Google login, not password). 5️⃣ Returns JWT.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 9: Admin Controller ═══════════ -->
+<div class="section" id="s9">
+  <h2 class="section-title">9. admin.controller.js <span class="badge badge-controller">Platform Admin</span></h2>
+  <div class="file-card">
+    <h3>controllers/admin.controller.js (492 lines)</h3>
+    <p class="purpose">Full platform administration — stats, user management, organization verification, report assignment.</p>
+
+    <div class="func">
+      <h4>getStats(req, res) — Dashboard Analytics</h4>
+      <p>Fires <strong>15 parallel MongoDB queries</strong> using <code>Promise.all()</code> for maximum speed:</p>
+      <p class="detail">
+        Total reports • Total users • Total organizations • Total communities • Reports grouped by status (aggregation) • Reports by month (12-month trend) • 10 most recent reports (with user info) • Reports by category • Reports by priority • 5 newest users • 5 pending (unverified) organizations • Critical open report count • Unverified org count • Pending review count • In-progress/assigned count.
+      </p>
+    </div>
+
+    <div class="func">
+      <h4>assignReport(req, res) — 5-Channel Notification</h4>
+      <p>Assigns a report to an organization. Triggers <strong>5 separate notification channels</strong>:</p>
+      <p class="detail">
+        1️⃣ Socket.IO event → real-time UI update for agency.<br>
+        2️⃣ In-app notification → stored in Notification collection.<br>
+        3️⃣ Email to agency → Brevo transactional email with report details.<br>
+        4️⃣ Email to citizen → telling them which agency was assigned.<br>
+        5️⃣ Browser push → to both agency and citizen devices.
+      </p>
+    </div>
+
+    <div class="func">
+      <h4>banUser(req, res) / unbanUser(req, res)</h4>
+      <p>Sets user <code>status: 'banned'</code> with reason, timestamp, and who banned them. Sends in-app notification + push notification. <strong>Admin accounts cannot be banned</strong> (safety check). Unbanning restores <code>status: 'active'</code> and clears ban metadata.</p>
+    </div>
+
+    <div class="func">
+      <h4>bulkBanUsers(req, res)</h4>
+      <p>Bans multiple users at once using MongoDB <code>updateMany()</code>. Excludes admin accounts. Returns count of affected users.</p>
+    </div>
+
+    <div class="func">
+      <h4>verifyOrganization(req, res)</h4>
+      <p>Admin approves an agency registration. Sets <code>verified: true</code> and <code>status: 'Active'</code>. Sends verification email + in-app notification + push notification to the agency owner.</p>
+    </div>
+
+    <div class="func">
+      <h4>deleteOrganization(req, res)</h4>
+      <p>Removes an organization AND its linked user account. Also unassigns all reports that were assigned to this org (sets <code>assignedTo: null</code>).</p>
+    </div>
+
+    <div class="func">
+      <h4>deleteUser(req, res)</h4>
+      <p>Deletes a user and ALL their reports and organization records. <strong>Cannot delete admin accounts</strong> (safety check).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 10: Agency Controller ═══════════ -->
+<div class="section" id="s10">
+  <h2 class="section-title">10. agency.controller.js <span class="badge badge-controller">Agency Operations</span></h2>
+  <div class="file-card">
+    <h3>controllers/agency.controller.js (335 lines)</h3>
+
+    <div class="func">
+      <h4>getAgencyStats(req, res)</h4>
+      <p>Runs 5 parallel queries filtered by <code>assignedTo: orgId</code>. Returns: total assigned, in-progress, resolved, closed, submitted counts. Calculates resolution rate percentage and "new this week" count. Includes category/priority breakdowns and monthly trends.</p>
+    </div>
+
+    <div class="func">
+      <h4>getAnalytics(req, res)</h4>
+      <p>Deep analytics including <strong>average resolution time</strong> — calculates the time difference between <code>createdAt</code> and <code>updatedAt</code> for resolved reports, converts to days. Returns 6-month trend with created vs resolved counts per month.</p>
+    </div>
+
+    <div class="func">
+      <h4>updateReportStatus(req, res) — Agency's Main Action</h4>
+      <p>The agency updates a report's status (In Progress → Resolved → Closed). Validates the agency owns the report. If resolving, accepts <code>resolutionImages[]</code> and <code>resolutionNotes</code>. Triggers <strong>6 notification channels</strong>: Socket.IO, in-app notification, email to citizen, email to admin, push to citizen, push to admin.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 11: Report Controller ═══════════ -->
+<div class="section" id="s11">
+  <h2 class="section-title">11. report.controller.js <span class="badge badge-controller">Core CRUD</span></h2>
+  <div class="file-card">
+    <h3>controllers/report.controller.js (329 lines)</h3>
+
+    <div class="func">
+      <h4>createReport(req, res)</h4>
+      <p>Creates a new environmental incident report. After saving: 1️⃣ Emits <code>report:new</code> via Socket.IO to admin room. 2️⃣ Awards +20 XP to the citizen. 3️⃣ Emails confirmation to citizen via Brevo. 4️⃣ Emails alert to admin. 5️⃣ Push notification to citizen. 6️⃣ Push notification to all admins.</p>
+    </div>
+
+    <div class="func">
+      <h4>updateReportStatus(req, res)</h4>
+      <p>Admin/agency endpoint. Validates the 6 allowed status values. Prevents changing closed reports. If resolving, awards +50 XP to the citizen. Sends Socket.IO event, in-app notification, Brevo email, and push notification.</p>
+    </div>
+
+    <div class="func">
+      <h4>deleteReport(req, res)</h4>
+      <p>Only the report owner can delete their own report. Validates ownership by comparing <code>report.user</code> with <code>req.user._id</code>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 12: AI Controller ═══════════ -->
+<div class="section" id="s12">
+  <h2 class="section-title">12. ai.controller.js <span class="badge badge-controller">AI Intelligence</span></h2>
+  <div class="file-card">
+    <h3>controllers/ai.controller.js (228 lines)</h3>
+    <p class="purpose">Gemini AI report analysis with keyword-based fallback engine.</p>
+
+    <div class="func">
+      <h4>analyzeReport(req, res) — Dual-Engine Analysis</h4>
+      <p><strong>Primary: Gemini AI</strong> — Sends a structured prompt asking for JSON with category, summary, severity, and suggested organization. Cleans response (strips markdown fences), parses JSON, validates against allowed values.</p>
+      <p><strong>Fallback: localAnalysis()</strong> — If Gemini is unavailable/rate-limited, uses a keyword-matching engine with 55+ environmental keywords across 8 categories, 4 severity levels, and 6 organization types. Counts keyword matches and picks the highest-scoring option.</p>
+    </div>
+
+    <div class="func">
+      <h4>findDuplicates(report) — Jaccard Similarity</h4>
+      <p>Queries reports with the same category created in the last 7 days. Tokenizes title+description into word sets. Computes <strong>Jaccard similarity</strong> (intersection/union of word sets). Reports with similarity > 30% are flagged as potential duplicates.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 13: Chat Controller ═══════════ -->
+<div class="section" id="s13">
+  <h2 class="section-title">13. chat.controller.js <span class="badge badge-controller">AI Chatbot</span></h2>
+  <div class="file-card">
+    <h3>controllers/chat.controller.js (223 lines)</h3>
+    <p class="purpose">Role-based AI chatbot assistant with strict domain boundary enforcement.</p>
+
+    <div class="func">
+      <h4>3 System Prompts (Citizen / Agency / Admin)</h4>
+      <p>Each role gets a specialized system prompt. The citizen prompt knows about report submission, tracking, Eco Tiers, satellite maps, PDF export. The agency prompt knows about dispatch workflows, status updates, resolution proof. The admin prompt knows about organization verification, user management, AI triage, maintenance mode.</p>
+    </div>
+
+    <div class="func">
+      <h4>Domain Boundary — isGreenAlertQuery(query)</h4>
+      <p>Checks if the query contains any of 50+ GreenAlert-related keywords. If the user asks about cooking recipes or celebrity news, the bot politely declines: <em>"I can only answer questions about the GreenAlert platform."</em></p>
+    </div>
+
+    <div class="func">
+      <h4>generateFallbackResponse(query, role)</h4>
+      <p>If Gemini AI is offline, this local engine provides pre-written responses for ~15 common topic areas (submitting reports, tracking status, XP rewards, map controls, PDF export, agency workflows, admin controls, etc.). Always returns a formatted, helpful answer even without AI.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 14: Other Controllers ═══════════ -->
+<div class="section" id="s14">
+  <h2 class="section-title">14. Other Controllers <span class="badge badge-controller">Supporting Features</span></h2>
+
+  <div class="file-card">
+    <h3>controllers/community.controller.js</h3>
+    <p class="purpose">Community forum management — create, join, leave, delete communities.</p>
+    <p>• <code>create()</code> — Creates community with creator as first member.<br>
+    • <code>join()</code> — Adds user to members array, notifies creator via Socket.IO + push.<br>
+    • <code>leave()</code> — Removes from members (creator cannot leave, must delete).<br>
+    • <code>deleteCommunity()</code> — Cascading delete: removes all posts and replies in that community first.</p>
+  </div>
+
+  <div class="file-card">
+    <h3>controllers/post.controller.js</h3>
+    <p class="purpose">Community posts with tags and reactions.</p>
+    <p>• <code>create()</code> — Must be community member. Supports tags (Alert, Cleanup, Discussion, Event, Question). Notifies ALL other community members via Socket.IO + push.<br>
+    • <code>toggleReact()</code> — Toggle reactions (like/heart/fire). If same reaction exists, removes it. If different, switches it.</p>
+  </div>
+
+  <div class="file-card">
+    <h3>controllers/comment.controller.js</h3>
+    <p class="purpose">Report discussion board — comments and threaded replies.</p>
+    <p>• <code>addComment()</code> — Max 2000 chars. Cannot comment on closed reports. Emits real-time <code>report:comment-added</code> event. Push notification to report owner.<br>
+    • <code>addReply()</code> — Nested reply on existing comment. Emits <code>report:reply-added</code>. Push to comment author.</p>
+  </div>
+
+  <div class="file-card">
+    <h3>controllers/poll.controller.js</h3>
+    <p class="purpose">Community polls with voting.</p>
+    <p>• <code>create()</code> — 2–5 options, must be community member.<br>
+    • <code>vote()</code> — One vote per user. Checks expiration. Must be community member.<br>
+    • <code>delete()</code> — Only creator or admin can delete.</p>
+  </div>
+
+  <div class="file-card">
+    <h3>controllers/notification.controller.js</h3>
+    <p>• <code>getNotifications()</code> — Fetches user's notifications sorted newest-first, populates linked report title/status.<br>
+    • <code>markAsRead()</code> — Sets <code>isRead: true</code> (only for the owning user).<br>
+    • <code>deleteNotification()</code> — Only owner can delete.</p>
+  </div>
+
+  <div class="file-card">
+    <h3>controllers/system.controller.js</h3>
+    <p>• <code>getSettings()</code> — Returns maintenance mode and announcement banner settings.<br>
+    • <code>updateMaintenance()</code> — Admin-only. Toggles maintenance mode and message.<br>
+    • <code>updateAnnouncement()</code> — Admin-only. Toggles global announcement banner.</p>
+  </div>
+
+  <div class="file-card">
+    <h3>controllers/health.controller.js</h3>
+    <p>• <code>checkHealth()</code> — Production-grade health check. Queries ALL 5 integrations in parallel: MongoDB status, Cloudinary ping, Brevo API status, VAPID push config, Gemini AI reachability. Returns JSON with status per service + server uptime.</p>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 15: Request Lifecycle ═══════════ -->
+<div class="section" id="s15">
+  <h2 class="section-title">15. Complete Request Lifecycle <span class="badge badge-service">Data Flow</span></h2>
+  <div class="file-card">
+    <h3>How a Report Flows Through the Entire System</h3>
+    <div class="flow-box">
+      🧑 Citizen fills form in CreateReport.jsx<br>
+      &nbsp;&nbsp;↓ Geocodes address via OpenStreetMap Nominatim (client-side)<br>
+      &nbsp;&nbsp;↓ Uploads photos to Cloudinary (client-side)<br>
+      &nbsp;&nbsp;↓ POST /api/reports (with JWT token in cookie)<br>
+      <br>
+      🔒 auth.middleware.js → protect() → verifies JWT → loads User<br>
+      🛡️ sanitize.middleware.js → strips $operators from body<br>
+      ⏱️ rateLimit.middleware.js → checks 100 req/15min limit<br>
+      <br>
+      📋 report.controller.js → createReport()<br>
+      &nbsp;&nbsp;↓ Validates required fields<br>
+      &nbsp;&nbsp;↓ Report.create() → saves to MongoDB<br>
+      &nbsp;&nbsp;↓ emitNewReport() → Socket.IO → admins see it instantly<br>
+      &nbsp;&nbsp;↓ awardXP(userId, 20) → +20 XP → check achievements<br>
+      &nbsp;&nbsp;↓ sendReportSubmittedEmail() → Brevo → citizen inbox<br>
+      &nbsp;&nbsp;↓ sendAdminNewReportAlert() → Brevo → admin inbox<br>
+      &nbsp;&nbsp;↓ sendPushToUser() → Web Push → citizen browser<br>
+      &nbsp;&nbsp;↓ sendPushToAdmins() → Web Push → all admin browsers<br>
+      <br>
+      👨‍💼 Admin opens dashboard → sees report → clicks "Assign"<br>
+      &nbsp;&nbsp;↓ PATCH /api/admin/reports/:id/assign<br>
+      &nbsp;&nbsp;↓ admin.controller.js → assignReport()<br>
+      &nbsp;&nbsp;↓ Socket.IO → agency + citizen + admin rooms<br>
+      &nbsp;&nbsp;↓ Email → agency + citizen<br>
+      &nbsp;&nbsp;↓ Push → agency + citizen<br>
+      <br>
+      🏢 Agency opens portal → updates status to "Resolved"<br>
+      &nbsp;&nbsp;↓ Uploads resolution photos → Cloudinary<br>
+      &nbsp;&nbsp;↓ PATCH /api/agency/reports/:id/status<br>
+      &nbsp;&nbsp;↓ agency.controller.js → updateReportStatus()<br>
+      &nbsp;&nbsp;↓ awardXP(citizenId, 50) → +50 XP<br>
+      &nbsp;&nbsp;↓ Socket.IO + Email + Push → citizen + admin<br>
+      <br>
+      ✅ Citizen sees Before & After resolution slider in dashboard
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 16: Logger ═══════════ -->
+<div class="section" id="s16">
+  <h2 class="section-title">16. Logger Utility <span class="badge badge-util">Utility</span></h2>
+  <div class="file-card">
+    <h3>utils/logger.js</h3>
+    <p class="purpose">Centralized logging using Winston with 5 severity levels.</p>
+    <div class="func">
+      <h4>Winston Logger Configuration</h4>
+      <p>5 log levels: <code>error</code> (0) → <code>warn</code> (1) → <code>info</code> (2) → <code>http</code> (3) → <code>debug</code> (4). Production only logs up to <code>info</code>; development logs everything including <code>debug</code>.</p>
+      <p class="detail">
+        <strong>3 transports</strong>:<br>
+        1️⃣ <strong>Console</strong> — colorized, human-readable output with timestamps.<br>
+        2️⃣ <strong>error.log</strong> file — only errors, written to <code>server/logs/error.log</code>.<br>
+        3️⃣ <strong>combined.log</strong> file — ALL messages, written to <code>server/logs/combined.log</code>.<br>
+        Format includes ISO timestamps, stack traces for errors, and JSON metadata.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 17: WIRING MAP ═══════════ -->
+<div class="section" id="s17">
+  <h2 class="section-title">17. 🔗 WIRING MAP: Route → Middleware → Controller → Service <span class="badge badge-config">Connections</span></h2>
+  <p style="color: var(--text-dim); margin-bottom: 24px; font-size: 1.05rem;">This section shows you <strong>exactly how every URL is connected to a specific controller function</strong>, what middleware runs before it, and what services/models it calls. This is the "wiring diagram" of the entire backend.</p>
+
+  <!-- Auth Wiring -->
+  <div class="file-card">
+    <h3>🔐 AUTH Routes — auth.routes.js → auth.controller.js</h3>
+    <p class="purpose">Registered in app.js at: <code>app.use('/api/v1/auth', authRoutes)</code></p>
+    <div class="flow-box">
+POST /api/v1/auth/register
+  → [authLimiter] → [registerValidation] → auth.controller.register()
+    → User.create() → email.service.sendWelcomeEmail() → signToken() → cookie + JWT
+
+POST /api/v1/auth/login
+  → [authLimiter] → [loginValidation] → auth.controller.login()
+    → User.findOne(email).select('+password') → bcrypt.compare()
+    → checks: banned? maintenance? agency verified?
+    → signToken() → cookie + JWT
+
+POST /api/v1/auth/logout
+  → auth.controller.logout()
+    → sets cookie 'token' = 'loggedout' (expires in 10s)
+
+POST /api/v1/auth/register-org
+  → [multer upload.single('licenseDocument')] → auth.controller.registerOrg()
+    → cloudinary.uploader.upload_stream() → User.create(role:'agency')
+    → Organization.create(verified:false) → signToken()
+
+GET  /api/v1/auth/me           → [protect] → auth.controller.getMe()
+PATCH /api/v1/auth/me          → [protect] → auth.controller.updateProfile()
+DELETE /api/v1/auth/me         → [protect] → auth.controller.deleteAccount()
+                                     → Report.deleteMany({user}) → User.findByIdAndDelete()
+
+POST /api/v1/auth/request-password-change-code
+  → auth.controller.requestPasswordChangeCode()
+    → generates 6-digit code → User.save() → email.service.sendPasswordChangeCodeEmail()
+
+POST /api/v1/auth/verify-password-change-code
+  → auth.controller.verifyPasswordChangeCode()
+    → validates code + expiry → user.password = newPassword → user.save() (bcrypt auto-hashes)
+
+PATCH /api/v1/auth/me/password → [protect] → auth.controller.changePassword()
+GET  /api/v1/auth/leaderboard   → [protect] → auth.controller.getLeaderboard()
+POST /api/v1/auth/check-achievements → [protect] → auth.controller.checkAchievements()
+                                         → gamification.service.checkAndUnlockAchievements()
+POST /api/v1/auth/send-verification → [protect] → auth.controller.sendVerificationEmail()
+POST /api/v1/auth/verify-email     → [protect] → auth.controller.verifyEmail()
+    </div>
+  </div>
+
+  <!-- Google Auth Wiring -->
+  <div class="file-card">
+    <h3>🔑 GOOGLE AUTH — auth.google.routes.js → auth.google.controller.js</h3>
+    <p class="purpose">Registered in app.js at: <code>app.use('/api/v1/auth', authGoogleRoutes)</code></p>
+    <div class="flow-box">
+POST /api/v1/auth/google
+  → auth.google.controller.googleLogin()
+    → fetch('https://www.googleapis.com/oauth2/v3/userinfo') with Bearer token
+    → if user exists: check banned → update avatar → signToken()
+    → if new user: User.create(role:'citizen', isVerified:true) → signToken()
+    </div>
+  </div>
+
+  <!-- Report Wiring -->
+  <div class="file-card">
+    <h3>📋 REPORT Routes — report.routes.js → report.controller.js + ai.controller.js + comment.controller.js</h3>
+    <p class="purpose">Registered in app.js at: <code>app.use('/api/reports', reportRoutes)</code> AND <code>app.use('/api/v1/reports', reportRoutes)</code></p>
+    <div class="flow-box">
+── ALL routes below pass through: [protect] middleware first ──
+
+GET  /api/reports/              → report.controller.getAllReports()
+                                   → Report.find().populate('user').populate('assignedTo')
+
+GET  /api/reports/my-reports    → report.controller.getMyReports()
+                                   → Report.find({user: req.user._id})
+
+GET  /api/reports/agency-reports → [authorize('agency','admin')] → report.controller.getAgencyReports()
+                                   → Report.find({assignedTo: req.user.organizationId})
+
+GET  /api/reports/:id           → report.controller.getReportById()
+                                   → Report.findById().populate('user','assignedTo','aiDuplicateOf','comments.user','comments.replies.user')
+
+POST /api/reports/              → report.controller.createReport()
+                                   → Report.create()
+                                   → socket.service.emitNewReport()        [Socket.IO → admins]
+                                   → gamification.service.awardXP(+20)     [XP engine]
+                                   → email.service.sendReportSubmittedEmail [Brevo → citizen]
+                                   → email.service.sendAdminNewReportAlert  [Brevo → admin]
+                                   → push.service.sendPushToUser()          [Web Push → citizen]
+                                   → push.service.sendPushToAdmins()        [Web Push → all admins]
+
+DELETE /api/reports/:id         → report.controller.deleteReport()
+                                   → ownership check → report.deleteOne()
+
+PATCH /api/reports/:id/status   → [authorize('agency','admin')] → report.controller.updateReportStatus()
+                                   → validates status → report.save()
+                                   → socket.service.emitReportStatusChanged()
+                                   → gamification.service.awardXP(+50) if Resolved
+                                   → Notification.create() → socket.service.emitNotification()
+                                   → email.service.sendReportStatusEmail()
+                                   → push.service.sendPushToUser()
+
+POST /api/reports/:id/analyze   → ai.controller.analyzeReport()
+                                   → ai.service.generateText() [Gemini AI multi-model]
+                                   → or localAnalysis() [keyword fallback]
+                                   → findDuplicates() [Jaccard similarity]
+
+GET  /api/reports/:id/analysis  → ai.controller.getAnalysis()
+GET  /api/reports/:id/find-duplicates → ai.controller.findDuplicates()
+
+GET  /api/reports/:id/comments  → comment.controller.getComments()
+POST /api/reports/:id/comments  → comment.controller.addComment()
+                                   → socket.service.emitReportComment()
+                                   → push.service.sendPushToUser() [to report owner]
+POST /api/reports/:id/comments/:commentId/replies → comment.controller.addReply()
+                                   → socket.service.emitReportReply()
+                                   → push.service.sendPushToUser() [to comment author]
+    </div>
+  </div>
+
+  <!-- Admin Wiring -->
+  <div class="file-card">
+    <h3>👨‍💼 ADMIN Routes — admin.routes.js → admin.controller.js</h3>
+    <p class="purpose">Registered in app.js at: <code>app.use('/api/admin', adminRoutes)</code> AND <code>app.use('/api/v1/admin', adminRoutes)</code></p>
+    <div class="flow-box">
+── ALL routes below pass through: [protect] → [authorize('admin')] ──
+
+GET    /api/admin/stats                    → admin.controller.getStats()
+                                              → 15 parallel MongoDB queries via Promise.all()
+                                              → Report, User, Organization, Community models
+
+GET    /api/admin/reports                  → admin.controller.getAllReports()
+GET    /api/admin/reports/:id              → admin.controller.getReportById()
+
+PATCH  /api/admin/reports/:id/assign       → admin.controller.assignReport()
+                                              → Report.findById() → Organization.findById()
+                                              → report.assignedTo = org._id → report.save()
+                                              → socket.service.emitReportAssigned()
+                                              → Notification.create() + emitNotification()
+                                              → email.service.sendReportAssignedToAgencyEmail()
+                                              → email.service.sendReportAssignedToCitizenEmail()
+                                              → push.service.sendPushToUser() [agency + citizen]
+
+GET    /api/admin/users                    → admin.controller.getUsers()
+DELETE /api/admin/users/:id               → admin.controller.deleteUser()
+                                              → blocks admin deletion → cascading delete (reports + orgs + user)
+
+PATCH  /api/admin/users/:id/ban            → admin.controller.banUser()
+                                              → user.status='banned' → Notification.create()
+                                              → push.service.sendPushToUser()
+PATCH  /api/admin/users/:id/unban          → admin.controller.unbanUser()
+POST   /api/admin/users/bulk-ban           → admin.controller.bulkBanUsers()
+                                              → User.updateMany()
+
+GET    /api/admin/organizations             → admin.controller.getOrganizations()
+PATCH  /api/admin/organizations/:id/verify  → admin.controller.verifyOrganization()
+                                              → org.verified=true, org.status='Active'
+                                              → email.service.sendOrgVerifiedEmail()
+                                              → Notification.create() + push
+DELETE /api/admin/organizations/:id        → admin.controller.deleteOrganization()
+                                              → unassigns all reports → deletes linked user + org
+    </div>
+  </div>
+
+  <!-- Agency Wiring -->
+  <div class="file-card">
+    <h3>🏢 AGENCY Routes — agency.routes.js → agency.controller.js</h3>
+    <p class="purpose">Registered in app.js at: <code>app.use('/api/agency', agencyRoutes)</code> AND <code>app.use('/api/v1/agency', agencyRoutes)</code></p>
+    <div class="flow-box">
+── ALL routes below pass through: [protect] → [authorize('agency','admin')] ──
+
+GET   /api/agency/stats              → agency.controller.getAgencyStats()
+                                        → 5 parallel queries filtered by assignedTo: orgId
+
+GET   /api/agency/analytics          → agency.controller.getAnalytics()
+                                        → calculates avg resolution time, monthly trends
+
+GET   /api/agency/org                → agency.controller.getOrgProfile()
+PATCH /api/agency/org                → agency.controller.updateOrgProfile()
+
+PATCH /api/agency/reports/:id/status → agency.controller.updateReportStatus()
+                                        → validates agency owns report
+                                        → report.status = 'Resolved' + resolutionImages + resolutionNotes
+                                        → socket.service.emitReportStatusChanged()
+                                        → Notification.create() + emitNotification()
+                                        → email.service.sendReportStatusEmail() [to citizen]
+                                        → email.service.sendAdminStatusUpdateAlert() [to admin]
+                                        → push.service.sendPushToUser() [to citizen]
+                                        → push.service.sendPushToAdmins() [to all admins]
+    </div>
+  </div>
+
+  <!-- Community / Post / Reply / Poll Wiring -->
+  <div class="file-card">
+    <h3>💬 COMMUNITY Ecosystem — 4 route files → 4 controllers</h3>
+    <div class="flow-box">
+── community.routes.js → community.controller.js ── [all: protect] ──
+GET    /api/communities/          → getAll()    → Community.find().populate('createdBy','members')
+GET    /api/communities/:id       → getById()
+POST   /api/communities/          → create()    → Community.create() — creator = first member
+PATCH  /api/communities/:id       → update()    → only creator can edit
+POST   /api/communities/:id/join  → join()      → push to members[] → notify creator (socket + push)
+POST   /api/communities/:id/leave → leave()     → creator cannot leave
+DELETE /api/communities/:id       → deleteCommunity() → cascading: Reply.deleteMany → Post.deleteMany → community.deleteOne
+
+── post.routes.js → post.controller.js ── [all: protect] ──
+GET    /api/posts/community/:communityId → getByCommunity() — filter by tags
+POST   /api/posts/community/:communityId → create() — must be member → notify ALL other members (socket + push)
+PATCH  /api/posts/:id                     → update() — only author can edit
+POST   /api/posts/:id/react               → toggleReact() — like/heart/fire toggle
+DELETE /api/posts/:id                     → delete() — Reply.deleteMany + post.deleteOne
+
+── reply.routes.js → reply.controller.js ── [all: protect] ──
+GET    /api/replies/post/:postId → getByPost()  — sorted by oldest first
+POST   /api/replies/post/:postId → create()    — must be community member
+PATCH  /api/replies/:id          → update()    — only author
+DELETE /api/replies/:id          → delete()    — only author
+
+── poll.routes.js → poll.controller.js ── [all: protect] ──
+GET    /api/polls/community/:communityId → getByCommunity()
+POST   /api/polls/community/:communityId → create() — 2-5 options, must be member
+POST   /api/polls/:id/vote               → vote()   — one vote per user, checks expiry
+DELETE /api/polls/:id                     → delete() — only creator or admin
+    </div>
+  </div>
+
+  <!-- Other Routes -->
+  <div class="file-card">
+    <h3>📡 OTHER Routes — upload, push, system, notifications, chat, health</h3>
+    <div class="flow-box">
+── upload.routes.js ── [protect] ──
+POST   /api/upload/  → [multer.array('images', max 5 files, 20MB limit)]
+  → cloudinary.uploader.upload_stream() per file (parallel via Promise.all)
+  → returns { urls: [...], publicIds: [...] }
+
+── push.routes.js ──
+GET    /api/push/vapid-public-key    → returns VAPID_PUBLIC_KEY (NO auth needed — public key is public)
+POST   /api/push/subscribe   [protect] → PushSubscription.create({user, endpoint, keys})
+POST   /api/push/unsubscribe [protect] → PushSubscription.findOneAndDelete()
+GET    /api/push/subscriptions[protect] → PushSubscription.find({user, active:true})
+
+── system.routes.js ──
+GET    /api/system/settings              → system.controller.getSettings() (NO auth — public)
+PATCH  /api/system/maintenance  [protect][authorize('admin')] → system.controller.updateMaintenance()
+PATCH  /api/system/announcement [protect][authorize('admin')] → system.controller.updateAnnouncement()
+
+── notification.routes.js ── [all: protect] ──
+GET    /api/notifications/          → getNotifications()     → Notification.find({user})
+PATCH  /api/notifications/:id/read  → markAsRead()           → {isRead: true}
+POST   /api/notifications/          → createNotification()   → emitNotification()
+DELETE /api/notifications/:id       → deleteNotification()
+
+── chat.routes.js ── [protect] ──
+POST   /api/chat/  → chat.controller.handleChat()
+  → selects system prompt based on req.user.role (citizen/agency/admin)
+  → ai.service.generateText() [Gemini AI]
+  → or generateFallbackResponse() [local keyword engine]
+
+── health.routes.js ──
+GET    /api/v1/health → health.controller.checkHealth() (NO auth — public)
+  → database.getStatus() + cloudinary.checkStatus() + brevo.checkStatus()
+  → push.isConfigured() + gemini.checkStatus()
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 18: MODEL DEPENDENCY MAP ═══════════ -->
+<div class="section" id="s18">
+  <h2 class="section-title">18. 🗺️ MODEL DEPENDENCY MAP <span class="badge badge-model">Who Uses What</span></h2>
+  <p style="color: var(--text-dim); margin-bottom: 24px; font-size: 1.05rem;">This shows you <strong>exactly which files import and use each Mongoose model</strong>. If someone asks "where is the User model used?", you can answer instantly.</p>
+
+  <div class="file-card">
+    <h3>models/User.js — Used in 12 files</h3>
+    <div class="func">
+      <h4>Files that import User model:</h4>
+      <p class="detail">
+        1. <code>config/adminSeed.js</code> — creates/updates admin account at boot<br>
+        2. <code>middlewares/auth.middleware.js</code> — loads current user from JWT for every protected request<br>
+        3. <code>controllers/auth.controller.js</code> — register, login, profile, password reset, leaderboard, achievements<br>
+        4. <code>controllers/auth.google.controller.js</code> — Google OAuth find/create user<br>
+        5. <code>controllers/admin.controller.js</code> — list users, delete, ban, unban, bulk-ban<br>
+        6. <code>controllers/report.controller.js</code> — reads user for email notifications<br>
+        7. <code>controllers/comment.controller.js</code> — looks up comment author for push notifications<br>
+        8. <code>services/gamification.service.js</code> — finds user to award XP and unlock achievements<br>
+        9. <code>services/push.service.js</code> — finds admin users for sendPushToAdmins()<br>
+        10. <code>controllers/agency.controller.js</code> — (indirectly via populated report.user)<br>
+        11. <code>controllers/notification.controller.js</code> — (user field on notification)<br>
+        12. <code>controllers/community.controller.js</code> — (member references)<br>
+      </p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>models/Report.js — Used in 7 files</h3>
+    <div class="func">
+      <h4>Files that import Report model:</h4>
+      <p class="detail">
+        1. <code>controllers/report.controller.js</code> — full CRUD operations<br>
+        2. <code>controllers/admin.controller.js</code> — get all reports, assign, get by ID, stats aggregations<br>
+        3. <code>controllers/agency.controller.js</code> — get assigned reports, stats, update status<br>
+        4. <code>controllers/ai.controller.js</code> — find report for AI analysis, save AI results, find duplicates<br>
+        5. <code>controllers/auth.controller.js</code> — delete user's reports on account deletion, count for leaderboard<br>
+        6. <code>controllers/comment.controller.js</code> — add comments/replies to report's embedded array<br>
+        7. <code>services/gamification.service.js</code> — count user's total & resolved reports for achievements<br>
+      </p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>models/Organization.js — Used in 5 files</h3>
+    <div class="func">
+      <h4>Files that import Organization model:</h4>
+      <p class="detail">
+        1. <code>controllers/admin.controller.js</code> — list orgs, verify org, delete org, count for stats<br>
+        2. <code>controllers/agency.controller.js</code> — get org profile, update org profile, find org name for emails<br>
+        3. <code>controllers/auth.controller.js</code> — create org during registerOrg(), check org verification at login<br>
+        4. <code>controllers/community.controller.js</code> — (indirectly via user.organizationId)<br>
+        5. <code>controllers/report.controller.js</code> — (populated via assignedTo reference)<br>
+      </p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>models/Notification.js — Used in 5 files</h3>
+    <div class="func">
+      <h4>Files that import Notification model:</h4>
+      <p class="detail">
+        1. <code>controllers/notification.controller.js</code> — get, create, mark read, delete<br>
+        2. <code>controllers/admin.controller.js</code> — creates notifications for assign, ban, unban, verify<br>
+        3. <code>controllers/agency.controller.js</code> — creates notification when status updated<br>
+        4. <code>controllers/report.controller.js</code> — creates notification on status change<br>
+        5. <code>controllers/post.controller.js</code> — creates notification for community members on new post<br>
+      </p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>Other Models</h3>
+    <div class="func">
+      <h4>Community.js → Used in: community.controller, post.controller, reply.controller, poll.controller</h4>
+      <p class="detail">Membership checks happen in post/reply/poll controllers to verify user is a member before allowing actions.</p>
+    </div>
+    <div class="func">
+      <h4>Post.js → Used in: post.controller, reply.controller, community.controller (cascading delete)</h4>
+    </div>
+    <div class="func">
+      <h4>Reply.js → Used in: reply.controller, post.controller (cascading delete), community.controller (cascading delete)</h4>
+    </div>
+    <div class="func">
+      <h4>Poll.js → Used in: poll.controller</h4>
+    </div>
+    <div class="func">
+      <h4>PushSubscription.js → Used in: push.routes.js (subscribe/unsubscribe), push.service.js (find active subs)</h4>
+    </div>
+    <div class="func">
+      <h4>Settings.js → Used in: system.controller.js (get/update settings), auth.middleware.js (maintenance mode check), auth.controller.js (maintenance mode check at login)</h4>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 19: FULL ARCHITECTURE ═══════════ -->
+<div class="section" id="s19">
+  <h2 class="section-title">19. 🏗️ FULL ARCHITECTURE — How Frontend Connects to Backend <span class="badge badge-service">System Design</span></h2>
+  <p style="color: var(--text-dim); margin-bottom: 24px; font-size: 1.05rem;">This is the <strong>complete big-picture architecture</strong> showing how the React frontend, Express backend, external APIs, and databases all connect together.</p>
+
+  <div class="file-card">
+    <h3>🌐 System Architecture Diagram</h3>
+    <div class="flow-box" style="line-height: 2.2;">
+┌─────────────────────────────────────────────────────────────────┐
+│                    👤 USER'S BROWSER                            │
+│                                                                 │
+│  React SPA (Vite)  ←──→  Service Worker (push notifications)   │
+│  Port: 5173 (dev)         Receives Web Push from server         │
+│  Vercel (prod)            Shows native browser notifications    │
+│                                                                 │
+│  Uses: Axios for HTTP  │  Socket.IO Client for WebSockets      │
+│  Stores: JWT in cookie │  MapLibre GL JS for satellite maps    │
+└──────────┬───────────────────────┬──────────────────────────────┘
+           │ HTTP (REST API)       │ WebSocket (Socket.IO)
+           ▼                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              🖥️ EXPRESS.JS SERVER (Node.js)                     │
+│              Port: 5000 (dev) / Render (prod)                   │
+│                                                                 │
+│  ┌─── Middleware Pipeline (runs on every request) ───┐         │
+│  │ 1. rateLimit (100 req/15min)                       │         │
+│  │ 2. cors (whitelist localhost + Vercel)              │         │
+│  │ 3. express.json() (parse body)                     │         │
+│  │ 4. cookieParser (read JWT cookie)                  │         │
+│  │ 5. helmet (security headers)                       │         │
+│  │ 6. sanitize (strip $ operators → prevent NoSQL inj)│         │
+│  │ 7. compression (gzip responses)                    │         │
+│  │ 8. morgan (log every request)                      │         │
+│  └────────────────────────────────────────────────────┘         │
+│                                                                 │
+│  ┌─── Route Layer (15 route groups) ────────────────┐          │
+│  │ /api/v1/auth     → auth.controller.js            │          │
+│  │ /api/v1/auth     → auth.google.controller.js     │          │
+│  │ /api/reports     → report.controller.js           │          │
+│  │ /api/admin       → admin.controller.js            │          │
+│  │ /api/agency      → agency.controller.js           │          │
+│  │ /api/chat        → chat.controller.js             │          │
+│  │ /api/upload      → upload.routes.js (inline)      │          │
+│  │ /api/push        → push.routes.js (inline)        │          │
+│  │ /api/system      → system.controller.js           │          │
+│  │ /api/communities → community.controller.js        │          │
+│  │ /api/posts       → post.controller.js             │          │
+│  │ /api/replies     → reply.controller.js            │          │
+│  │ /api/polls       → poll.controller.js             │          │
+│  │ /api/notifications → notification.controller.js   │          │
+│  │ /api/v1/health   → health.controller.js           │          │
+│  └───────────────────────────────────────────────────┘          │
+│                                                                 │
+│  ┌─── Service Layer ────────────────────────────────┐          │
+│  │ ai.service.js        → Gemini AI multi-model     │          │
+│  │ email.service.js     → Brevo transactional email │          │
+│  │ socket.service.js    → Socket.IO room management │          │
+│  │ push.service.js      → Web Push (VAPID)          │          │
+│  │ gamification.service → XP awards + achievements  │          │
+│  └───────────────────────────────────────────────────┘          │
+│                                                                 │
+│  Socket.IO Server ──→ Rooms: user:{id}, agency:{orgId}, admins │
+└──────┬──────────┬──────────┬──────────┬──────────┬─────────────┘
+       │          │          │          │          │
+       ▼          ▼          ▼          ▼          ▼
+┌──────────┐┌──────────┐┌──────────┐┌──────────┐┌──────────────┐
+│ MongoDB  ││Cloudinary││ Brevo    ││ Gemini   ││ Browser Push │
+│ Atlas    ││ (CDN)    ││ (Email)  ││ AI       ││ (Web Push)   │
+│          ││          ││          ││          ││              │
+│ 10 Collec││ Images + ││ Welcome  ││ Report   ││ VAPID keys   │
+│ -tions:  ││ Videos   ││ Status   ││ analysis ││ Free, no     │
+│ Users    ││ Licenses ││ Assign   ││ Chatbot  ││ third-party  │
+│ Reports  ││ Resolutn ││ Password ││ Fallback ││ service      │
+│ Orgs     ││ photos   ││ Verify   ││ to local ││ needed       │
+│ Notifs   ││          ││ OrgVerif ││ keywords ││              │
+│ Communit ││          ││ AdminAlrt││          ││              │
+│ Posts    ││          ││          ││          ││              │
+│ Replies  ││          ││          ││          ││              │
+│ Polls    ││          ││          ││          ││              │
+│ PushSubs ││          ││          ││          ││              │
+│ Settings ││          ││          ││          ││              │
+└──────────┘└──────────┘└──────────┘└──────────┘└──────────────┘
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>📡 Real-Time Notification Architecture</h3>
+    <p class="purpose">Every major action in GreenAlert triggers up to <strong>5 parallel notification channels</strong>. Here's exactly how they connect:</p>
+    <div class="flow-box" style="line-height: 2;">
+                   ┌──── ACTION HAPPENS ────┐
+                   │ (e.g. report assigned) │
+                   └───────────┬────────────┘
+                               │
+          ┌────────────────────┼────────────────────┐
+          │                    │                    │
+          ▼                    ▼                    ▼
+   ┌──────────────┐  ┌─────────────────┐  ┌──────────────┐
+   │ 1. Socket.IO │  │ 2. In-App Notif │  │ 3. Email     │
+   │              │  │                 │  │              │
+   │ emitReport   │  │ Notification    │  │ Brevo API    │
+   │ Assigned()   │  │ .create()       │  │ sendReport   │
+   │              │  │ + emitNotif()   │  │ AssignedEmail│
+   │ Instant UI   │  │ Stored in DB    │  │ ()           │
+   │ update in    │  │ for dashboard   │  │              │
+   │ browser      │  │ bell icon       │  │ Arrives in   │
+   │              │  │                 │  │ email inbox  │
+   └──────────────┘  └─────────────────┘  └──────────────┘
+          │
+          │         ┌─────────────────┐  ┌──────────────┐
+          │         │ 4. Push (Agent) │  │ 5. Push      │
+          │         │                 │  │ (Citizen)    │
+          └────────▶│ sendPushToUser  │  │ sendPushTo   │
+                    │ (agency user)   │  │ User(citizen)│
+                    │                 │  │              │
+                    │ Browser popup   │  │ Browser popup│
+                    │ even if tab     │  │ even if tab  │
+                    │ is closed       │  │ is closed    │
+                    └─────────────────┘  └──────────────┘
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>🔐 Authentication Flow — How JWT Connects Frontend to Backend</h3>
+    <div class="flow-box" style="line-height: 2;">
+FRONTEND (React)                              BACKEND (Express)
+─────────────────                              ─────────────────
+1. User fills login form
+2. POST /api/v1/auth/login  ──────────────▶   auth.controller.login()
+   body: {email, password}                    → User.findOne(email)
+                                              → bcrypt.compare(password, hash)
+                                              → jwt.sign({id, email, role}, JWT_SECRET)
+                                              → res.cookie('token', jwt, {httpOnly: true})
+3. Browser stores httpOnly cookie  ◀──────    → res.json({token, user})
+   (JavaScript CANNOT read it!)               
+   Frontend also stores token in
+   localStorage for Authorization header
+
+4. ANY subsequent request:
+   Cookie auto-sent by browser  ──────────▶   auth.middleware.protect()
+   OR Authorization: Bearer {token}           → jwt.verify(token, JWT_SECRET)
+                                              → User.findById(decoded.id)
+                                              → checks: exists? banned? maintenance?
+                                              → req.user = currentUser
+                                              → next() → controller runs
+
+5. Protected + Role-restricted:
+   Same as above  ────────────────────────▶   auth.middleware.authorize('admin')
+                                              → if req.user.role !== 'admin' → 403
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>☁️ File Upload Flow — How Images Go From Browser to Cloud</h3>
+    <div class="flow-box" style="line-height: 2;">
+FRONTEND                         BACKEND                         CLOUDINARY
+────────                         ───────                         ──────────
+1. User selects photos
+   in CreateReport.jsx
+
+2. FormData with files   ──▶   POST /api/upload/
+                               [protect] middleware
+                               [multer.array('images',5)]
+                               multer stores files in
+                               MEMORY (not disk)
+                               req.files = [{buffer, mimetype}]
+
+3.                             For each file:              ──▶  cloudinary.uploader
+                               cloudinary.upload_stream()       .upload_stream()
+                               stream.end(file.buffer)          Stores in
+                                                                 'greenalert/' folder
+                                                                 Returns secure_url
+
+4. Frontend receives     ◀──   res.json({urls: [...]})   ◀──   https://res.cloudinary
+   Cloudinary URLs                                              .com/xxx/image/...
+
+5. Frontend sends URLs
+   with report data      ──▶   POST /api/reports/
+                               report.images = urls
+                               Report.create() → MongoDB
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>🤖 AI Analysis Flow — How Gemini AI Connects</h3>
+    <div class="flow-box" style="line-height: 2;">
+FRONTEND                      BACKEND                          GOOGLE CLOUD
+────────                      ───────                          ────────────
+1. Admin clicks             POST /api/reports/:id/analyze
+   "Analyze" button  ──▶   [protect] middleware
+                            ai.controller.analyzeReport()
+
+2.                          Builds structured prompt:
+                            "Analyze this report...
+                            Title: ..., Description: ..."
+
+3.                          ai.service.generateText(prompt)
+                            Model fallback chain:          ──▶  Google Generative
+                            Try: gemini-2.0-flash                AI API
+                            Fail? Try: gemini-1.5-flash         generativelanguage
+                            Fail? Try: gemini-1.5-pro           .googleapis.com
+                            Fail? Try: gemini-pro
+                            ALL fail? →
+
+4.                          localAnalysis(report)               (offline fallback)
+                            55+ keywords × 8 categories
+                            Score-based matching
+
+5.                          Saves to Report document:
+                            report.aiCategory = ...
+                            report.aiSummary = ...
+                            report.aiSeverity = ...
+                            report.aiSuggestedOrg = ...
+
+6.                          findDuplicates(report)
+                            → same-category reports from last 7 days
+                            → Jaccard word similarity > 30%
+                            → report.aiDuplicateOf = match._id
+
+7. Frontend receives  ◀──  res.json(populated report)
+   AI results and
+   displays them
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>🔔 Web Push Flow — How Browser Notifications Connect</h3>
+    <div class="flow-box" style="line-height: 2;">
+ONE-TIME SETUP (user enables push):
+──────────────────────────────────
+1. Frontend calls:     GET /api/push/vapid-public-key
+                       → returns VAPID_PUBLIC_KEY (public, no auth needed)
+
+2. Frontend registers Service Worker:
+   navigator.serviceWorker.register('/sw.js')
+
+3. Browser generates push subscription:
+   registration.pushManager.subscribe({applicationServerKey: vapidKey})
+   → returns: {endpoint: 'https://fcm.googleapis.com/...', keys: {p256dh, auth}}
+
+4. Frontend saves:     POST /api/push/subscribe
+                       body: {endpoint, keys}
+                       → PushSubscription.create({user, endpoint, keys})
+
+WHEN NOTIFICATION IS SENT:
+──────────────────────────
+5. Server event fires (e.g. report assigned)
+   → push.service.sendPushToUser(userId, title, body, url)
+     → PushSubscription.find({user: userId, active: true})
+     → web-push.sendNotification(subscription, payload)
+       → encrypted payload sent to browser push service endpoint
+         (Google FCM / Mozilla Push / Apple Push)
+
+6. Browser push service delivers to Service Worker
+   → sw.js catches 'push' event
+   → self.registration.showNotification(title, {body, icon})
+   → Native browser popup appears even if tab is closed!
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════ SECTION 20: FILE MANIFEST ═══════════ -->
+<div class="section" id="s20">
+  <h2 class="section-title">20. 📂 COMPLETE FILE MANIFEST <span class="badge badge-util">Master Inventory</span></h2>
+  <p style="color: var(--text-dim); margin-bottom: 24px; font-size: 1.05rem;">This is the complete list of <strong>every file in the entire GreenAlert project codebase</strong> (both Client and Server), detailing their purpose, components, and how they connect to the rest of the application.</p>
+
+  <div class="file-card">
+    <h3>🖥️ BACKEND / SERVER FILES (server/src/)</h3>
+    <div class="func">
+      <h4>Entry & App Pipeline</h4>
+      <p class="detail">
+        • <code>server.js</code> — Boots HTTP server, initializes Socket.IO, connects DB, seeds admin account, handles graceful shutdown.<br>
+        • <code>app.js</code> — Express app setup, rate limiters, CORS whitelist, helmet security, NoSQL sanitizer, compression, Morgan logger, 15 route registrations.
+      </p>
+    </div>
+    <div class="func">
+      <h4>Config Files (server/src/config/)</h4>
+      <p class="detail">
+        • <code>database.js</code> — MongoDB Atlas Mongoose connection logic with 45s server selection timeout.<br>
+        • <code>env.js</code> — Envalid schema checking for process.env (MONGODB_URI, JWT_SECRET, etc.).<br>
+        • <code>adminSeed.js</code> — Boot script to auto-create or update platform admin user.<br>
+        • <code>gemini.js</code> — Dynamic Google Gemini AI model resolution (finds gemini-2.0-flash / 1.5-flash).<br>
+        • <code>cloudinary.js</code> — Cloudinary SDK init and ping health check.<br>
+        • <code>brevo.js</code> — Brevo REST API v3 email client configuration.<br>
+        • <code>push.js</code> — VAPID keys loader and keypair generator script for free Web Push.<br>
+        • <code>swagger.js</code> — JSDoc Swagger spec compiler for interactive API docs.<br>
+        • <code>achievements.js</code> — Definition array for all 8 gamification achievements.
+      </p>
+    </div>
+    <div class="func">
+      <h4>Models (server/src/models/)</h4>
+      <p class="detail">
+        • <code>User.js</code> — User schema, pre-save bcrypt password hash hook, comparePassword method.<br>
+        • <code>Report.js</code> — Incident report schema, embedded comments & replies subdocuments.<br>
+        • <code>Organization.js</code> — Responding agency organization schema with license details.<br>
+        • <code>Notification.js</code> — User in-app notification schema.<br>
+        • <code>Community.js</code> — Forum community group schema.<br>
+        • <code>Post.js</code> — Community post schema with reactions subdocument.<br>
+        • <code>Reply.js</code> — Threaded reply schema for community posts.<br>
+        • <code>Poll.js</code> — Voting poll schema with options and voter tracking.<br>
+        • <code>PushSubscription.js</code> — Web Push VAPID endpoint & keys schema per user device.<br>
+        • <code>Settings.js</code> — Maintenance mode and global announcement singleton schema.
+      </p>
+    </div>
+    <div class="func">
+      <h4>Controllers (server/src/controllers/)</h4>
+      <p class="detail">
+        • <code>auth.controller.js</code> — Register, login, JWT cookies, profile, password reset, leaderboard, achievements.<br>
+        • <code>auth.google.controller.js</code> — OAuth integration with Google API userinfo.<br>
+        • <code>admin.controller.js</code> — Stats aggregation, assign reports, user management, ban/unban, org verification.<br>
+        • <code>agency.controller.js</code> — Agency dashboard stats, resolution proof updates, analytics.<br>
+        • <code>report.controller.js</code> — Create report (+20 XP), list, detail, update status (+50 XP), delete.<br>
+        • <code>ai.controller.js</code> — Gemini AI report analyzer, fallback keyword engine, Jaccard duplicate finder.<br>
+        • <code>chat.controller.js</code> — Role-based AI assistant chatbot with domain boundary check.<br>
+        • <code>community.controller.js</code> — Forum group creation, join, leave, cascading deletion.<br>
+        • <code>post.controller.js</code> — Forum post creation, reaction toggles, deletion.<br>
+        • <code>reply.controller.js</code> — Threaded replies on forum posts.<br>
+        • <code>poll.controller.js</code> — Voting poll creation and single-vote logic.<br>
+        • <code>comment.controller.js</code> — Report comment board and nested replies.<br>
+        • <code>notification.controller.js</code> — Get user notifications, mark read, delete.<br>
+        • <code>system.controller.js</code> — Toggle maintenance mode and global announcement banners.<br>
+        • <code>health.controller.js</code> — Multi-service connection status health check.
+      </p>
+    </div>
+    <div class="func">
+      <h4>Services & Middlewares (server/src/services/, server/src/middlewares/, server/src/utils/)</h4>
+      <p class="detail">
+        • <code>ai.service.js</code> — Reusable Gemini generation with 5-model failover chain.<br>
+        • <code>email.service.js</code> — 7 Brevo email templates (Welcome, Verification, Status, Assign, etc.).<br>
+        • <code>socket.service.js</code> — Socket.IO event emitters for live rooms (user, agency, admins, report).<br>
+        • <code>push.service.js</code> — web-push payload encryption and delivery engine.<br>
+        • <code>gamification.service.js</code> — XP adder and achievement requirements checker.<br>
+        • <code>auth.middleware.js</code> — JWT protect middleware and role authorize middleware.<br>
+        • <code>rateLimit.middleware.js</code> — Express rate limiters for API and Auth endpoints.<br>
+        • <code>sanitize.middleware.js</code> — Custom MongoDB NoSQL operator sanitizer.<br>
+        • <code>logger.js</code> — Winston logger with console, error.log, and combined.log transports.
+      </p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>💻 FRONTEND / CLIENT FILES (client/src/)</h3>
+    <div class="func">
+      <h4>Core & Layouts</h4>
+      <p class="detail">
+        • <code>App.jsx</code> — Main React router, route protection guards, role-based routing.<br>
+        • <code>main.jsx</code> — React DOM root renderer.<br>
+        • <code>index.css</code> — Global design system, glassmorphism utilities, CSS variables.<br>
+        • <code>layouts/DashboardLayout.jsx</code> — Sidebar, topbar, notification bell, live WebSocket connection setup.<br>
+        • <code>layouts/AdminLayout.jsx</code> — Specialized administration panel layout.<br>
+        • <code>layouts/AgencyLayout.jsx</code> — Specialized responder agency portal layout.
+      </p>
+    </div>
+    <div class="func">
+      <h4>Pages (client/src/pages/)</h4>
+      <p class="detail">
+        • <code>Home.jsx</code> — Public landing page with hero banner and features overview.<br>
+        • <code>Login.jsx</code> — User authentication page with JWT cookie handling.<br>
+        • <code>Signup.jsx</code> — Citizen account creation page.<br>
+        • <code>OrgRegister.jsx</code> — Agency application page with PDF license upload.<br>
+        • <code>VerifyEmail.jsx</code> — 6-digit email code verification screen.<br>
+        • <code>ForgotPassword.jsx</code> — Password reset request and code entry screen.<br>
+        • <code>dashboard/DashboardHome.jsx</code> — Citizen dashboard homepage with XP card and quick stats.<br>
+        • <code>dashboard/CreateReport.jsx</code> — Report submission form with OpenStreetMap Nominatim geocoding & fallback.<br>
+        • <code>dashboard/ExploreReports.jsx</code> — Community public reports list and filters.<br>
+        • <code>dashboard/MyReports.jsx</code> — Personal submitted reports list.<br>
+        • <code>dashboard/ReportDetails.jsx</code> — Single report view with timeline, comments, and resolution proof.<br>
+        • <code>dashboard/MapPage.jsx</code> — Fullscreen interactive incident map.<br>
+        • <code>dashboard/CommunityPage.jsx</code> — Forum groups directory.<br>
+        • <code>dashboard/CommunityDetail.jsx</code> — Single forum view with posts, replies, and voting polls.<br>
+        • <code>dashboard/AchievementsPage.jsx</code> — Eco Tiers, XP breakdown, and unlocked badges visual grid.<br>
+        • <code>dashboard/NotificationsPage.jsx</code> — Full notification history.<br>
+        • <code>dashboard/ProfilePage.jsx</code> — User profile editor and avatar uploader.<br>
+        • <code>dashboard/SettingsPage.jsx</code> — Notification and privacy preferences.<br>
+        • <code>admin/AdminDashboard.jsx</code> — Platform admin overview with 15 parallel metrics.<br>
+        • <code>admin/AdminReports.jsx</code> & <code>AdminReportDetails.jsx</code> — Admin report triage and agency dispatching.<br>
+        • <code>admin/AdminOrganizations.jsx</code> — Agency license verification panel.<br>
+        • <code>admin/AdminUsers.jsx</code> — User management and ban/unban controls.<br>
+        • <code>admin/AdminSettings.jsx</code> — Maintenance mode and global announcement controls.<br>
+        • <code>agency/AgencyDashboard.jsx</code> — Agency assigned tasks overview.<br>
+        • <code>agency/AgencyReports.jsx</code> & <code>AgencyReportDetails.jsx</code> — Resolution workflow and photo proof upload.<br>
+        • <code>agency/AgencyAnalytics.jsx</code> — Resolution performance trends.
+      </p>
+    </div>
+    <div class="func">
+      <h4>Components & Map Services (client/src/components/)</h4>
+      <p class="detail">
+        • <code>components/map/MapLibreMap.jsx</code> — MapLibre GL map component initialized with <strong>Google Hybrid Satellite</strong> view.<br>
+        • <code>components/map/MapControls.jsx</code> — Custom map overlay buttons (location reset, layer toggles).<br>
+        • <code>components/auth/ProtectedRoutes.jsx</code> — Route guards enforcing user login and role authorizations.<br>
+        • <code>components/landing/*</code> — Navbar, Footer, Features, Hero components.<br>
+        • <code>components/ui/*</code> — Reusable UI primitives (Buttons, Cards, Badges, Modals).
+      </p>
+    </div>
+  </div>
+
+  <div class="file-card">
+    <h3>📄 SPECIAL GENERATED DOCUMENTATION (Local Unpushed Artifacts)</h3>
+    <div class="func">
+      <h4>Files Created For Presentation Preparation:</h4>
+      <p class="detail">
+        1. <code>GreenAlert_PRD.html</code> — Full Product Requirement Document + 51 Defense Q&As.<br>
+        2. <code>GreenAlert_Server_Deep_Dive.html</code> — This comprehensive manual detailing every file, function, route, model, and system connection.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ Footer ═══════════ -->
+<div style="text-align:center; padding: 40px 0; color: var(--text-dim); font-size:.85rem; border-top: 1px solid var(--border); margin-top: 40px;">
+  <p><strong>GreenAlert</strong> — Complete Server Codebase Deep Dive</p>
+  <p>Generated for presentation defense preparation • All 40+ server files analyzed • NOT for public distribution</p>
+  <p style="margin-top:12px;">
+    <button class="print-btn" onclick="window.print()" style="font-size:.85rem; padding: 10px 24px;">📄 Download as PDF / Print</button>
+  </p>
+</div>
+
+</div>
+</body>
+</html>

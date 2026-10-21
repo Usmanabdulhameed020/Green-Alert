@@ -1,5 +1,4 @@
 const cloudinary = require('cloudinary').v2;
-const logger = require('../utils/logger');
 
 // Export the configured cloudinary instance for use in upload routes
 let cloudinaryInstance = cloudinary;
@@ -13,7 +12,7 @@ const configureCloudinary = () => {
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
   if (!cloudName || !apiKey || !apiSecret) {
-    logger.warn('Cloudinary configuration missing.');
+    console.warn('Cloudinary configuration missing.');
     return false;
   }
 

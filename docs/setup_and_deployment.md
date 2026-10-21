@@ -1,99 +1,219 @@
-# 🛠️ Configuration & Setup Guide
+# ⚙️ Setup & Deployment Guide
 
-This guide details how to acquire, configure, and manage third-party integration keys required to run GreenAlert.
-
----
-
-## 🔑 Environment Variables Configuration
-
-GreenAlert uses environment files to load credentials.
-- **Server:** [server/.env](file:///C:/Users/HomePC/Desktop/GreenAlert/server/.env) (created from `server/.env.example`)
-- **Client:** [client/.env](file:///C:/Users/HomePC/Desktop/GreenAlert/client/.env) / [client/.env.production](file:///C:/Users/HomePC/Desktop/GreenAlert/client/.env.production)
+This guide covers running GreenAlert locally and deploying it. It assumes the simplified codebase: React + Vite frontend, Express + MongoDB backend, Cloudinary for uploads.
 
 ---
 
-## 1. 🗄️ Database Setup (MongoDB Atlas)
+## 1. Prerequisites
 
-1. Create a free account at [mongodb.com/atlas](https://www.mongodb.com/cloud/atlas).
-2. Create a Shared cluster (M0) and name it.
-3. Under **Database Access**, create a user with read/write privileges.
-4. Under **Network Access**, whitelist `0.0.0.0/log` (allow access from anywhere) or add your server IP.
-5. Get your connection string: `mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority`.
-6. Add it to `server/.env`:
-   ```env
-   MONGODB_URI=your_mongodb_connection_string
-   ```
+- **Node.js 20+** and npm
+- **MongoDB** — a local instance or a free MongoDB Atlas cluster
+- **Cloudinary account** — free tier is fine (only needed for image uploads)
+- **Git**
 
----
+Check your tooling:
 
-## 2. 🤖 Google Gemini AI Key
-
-Used for categorizing reports, assessing hazard severity, and detecting duplicates.
-
-1. Go to [Google AI Studio](https://aistudio.google.com/).
-2. Create a API key.
-3. Add it to `server/.env`:
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key
-   ```
+```bash
+node -v
+npm -v
+```
 
 ---
 
-## 3. 🖼️ Cloudinary (Media Uploads)
+## 2. Clone the Repository
 
-Used to store images and videos submitted by users.
+```bash
+git clone https://github.com/Usmanabdulhameed020/Green-Alert.git
+cd Green-Alert
+```
 
-1. Create a free account at [cloudinary.com](https://cloudinary.com).
-2. Copy your **Cloud Name**, **API Key**, and **API Secret** from the console dashboard.
-3. Add them to `server/.env`:
-   ```env
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   ```
+The project has two independent packages: `server/` and `client/`.
 
 ---
 
-## 4. ✉️ Brevo (Email Alerts)
+## 3. Backend Setup
 
-Used to send verification codes, welcome emails, and notifications.
+```bash
+cd server
+npm install
+```
 
-1. Create an account at [brevo.com](https://www.brevo.com).
-2. Go to **SMTP & API** tab under your account menu.
-3. Generate a new API Key v3.
-4. Add it to `server/.env`:
-   ```env
-   BREVO_API_KEY=your_brevo_api_key
-   BREVO_SENDER_NAME=GreenAlert
-   BREVO_SENDER_EMAIL=your_sending_email
-   BREVO_SMTP_LOGIN=your_smtp_login
-   ```
+### Create `server/.env`
+
+Copy the example and fill it in:
+
+```bash
+cp .env.example .env
+```
+
+```env
+NODE_ENV=development
+PORT=5000
+
+MONGODB_URI=mongodb://localhost:27017/greenalert
+JWT_SECRET=replace-with-a-long-random-secret
+JWT_EXPIRES_IN=7d
+
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+BCRYPT_SALT_ROUNDS=10
+
+# Admin seed (created/promoted automatically on startup)
+ADMIN_EMAIL=admin@greenalert.com
+ADMIN_PASSWORD=your-secure-admin-password
+```
+
+Notes:
+- All variables are validated at startup (`server/src/config/env.js`). Missing `MONGODB_URI` or `JWT_SECRET` will stop the server with a clear message.
+- If the Cloudinary variables are blank, the server still starts — only uploads fail.
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` are optional, but if set, that account is created (or promoted) as an admin every time the server boots.
+
+### Run the backend
+
+```bash
+npm run dev     # node --watch (auto-restarts on file changes)
+# or
+npm start       # plain node
+```
+
+You should see:
+
+```
+Database connected successfully.
+Server running on http://localhost:5000
+Health check: http://localhost:5000/api/v1/health
+```
+
+Verify it's alive:
+
+```bash
+curl http://localhost:5000/api/v1/health
+```
 
 ---
 
-## 5. 🔔 Web Push Keys (VAPID)
+## 4. Frontend Setup
 
-Used for push notifications to browsers on desktops and mobile devices.
+```bash
+cd ../client
+npm install
+```
 
-1. Generate new VAPID keys by running the helper script or using `web-push` CLI:
-   ```bash
-   npx web-push generate-vapid-keys
-   ```
-2. Copy the public and private keys generated and add them to `server/.env`:
-   ```env
-   VAPID_PUBLIC_KEY=your_public_key
-   VAPID_PRIVATE_KEY=your_private_key
-   ```
+### `client/.env`
+
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+- In **development**, leave `VITE_API_URL` unset and the Vite dev server proxies `/api` to `http://localhost:5000` (see `client/vite.config.js`). Setting it to `http://localhost:5000` also works.
+- In **production**, set it to your deployed backend URL (for example `https://green-alert.onrender.com`).
+- `VITE_MAPTILER_KEY` and `VITE_GOOGLE_CLIENT_ID` appear in some env files but are **unused** — the map uses free ESRI/Google raster tiles and there is no social login.
+
+### Run the frontend
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:5173`.
 
 ---
 
-## 🗺️ Map Service (MapTiler)
+## 5. Using the App
 
-To use high-quality map vector tiles in the React frontend:
+1. **Admin** — log in with the `ADMIN_EMAIL` / `ADMIN_PASSWORD` from your `.env`.
+2. **Agency** — register at `/register-org`, then have the admin verify the organization (Admin → Organizations → Verify). Only then can the agency log in.
+3. **Citizen** — register at `/signup` and start creating reports at `/citizen-dashboard/create-report`.
 
-1. Create an account at [maptiler.com](https://www.maptiler.com/).
-2. Copy your API key.
-3. Add it to `client/.env` and `client/.env.production`:
-   ```env
-   VITE_MAPTILER_KEY=your_maptiler_key
-   ```
+---
+
+## 6. Available Scripts
+
+### Server (`server/`)
+| Script | Does |
+|--------|------|
+| `npm run dev` | Runs with `node --watch` (restarts on changes) |
+| `npm start` | Runs the server normally |
+
+### Client (`client/`)
+| Script | Does |
+|--------|------|
+| `npm run dev` | Vite dev server |
+| `npm run dev:host` | Dev server exposed on the network |
+| `npm run build` | Production build into `dist/` |
+| `npm run preview` | Serves the built `dist/` locally |
+| `npm run lint` | Runs ESLint |
+| `npm run test:mobile` | Serves `dist/` at port 5173 (device testing) |
+
+---
+
+## 7. Production Build (Frontend)
+
+```bash
+cd client
+npm run build
+```
+
+This outputs a static site to `client/dist/`. Deploy it to any static host (Netlify, Vercel, GitHub Pages, an S3 bucket, or Render's static site service). Make sure `VITE_API_URL` points at your deployed API **before** building (Vite bakes env values in at build time).
+
+Preview the build locally:
+
+```bash
+npm run preview
+```
+
+---
+
+## 8. Deployment
+
+### Backend (e.g. Render / Railway)
+
+1. Create a Web Service pointing at the `server/` directory.
+2. Build command: `npm install` · Start command: `npm start`.
+3. Add the same environment variables from `.env` in the host's dashboard, including `NODE_ENV=production` and your Atlas `MONGODB_URI`.
+4. Note the public URL (e.g. `https://green-alert.onrender.com`).
+
+### Frontend (e.g. Render Static / Netlify / Vercel)
+
+1. Point at the `client/` directory.
+2. Build command: `npm install && npm run build` · Publish directory: `dist`.
+3. Set `VITE_API_URL` to the backend URL.
+
+### Database (MongoDB Atlas)
+
+1. Create a free cluster and a database user.
+2. Allow network access from your host (or `0.0.0.0/0` for simplicity).
+3. Copy the connection string into `MONGODB_URI`.
+
+### Cloudinary
+
+1. Create an account and grab the cloud name, API key, and API secret.
+2. Set the three `CLOUDINARY_*` variables on the backend host.
+
+---
+
+## 9. Troubleshooting
+
+| Symptom | Likely cause / fix |
+|---------|--------------------|
+| `MONGODB_URI is not set` | Missing `server/.env` or the variable |
+| Server exits with an env error | A required variable is missing — check `env.js` |
+| `Cloudinary configuration missing` warning | Expected if you haven't set Cloudinary creds; uploads won't work |
+| Frontend gets `404`/`ERR_CONNECTION_REFUSED` on API calls | Backend not running, or wrong `VITE_API_URL` |
+| CORS errors | Backend not running, or you're hitting a different origin than expected |
+| Map is blank | Tile provider blocked on your network; check the browser console |
+| Agency can't log in | Organization not yet verified by an admin |
+| `401 Invalid or expired token` | Logged out/expired — log in again |
+
+---
+
+## 10. Security Checklist Before Deploying
+
+- [ ] `JWT_SECRET` is a long, random value (not the example)
+- [ ] `ADMIN_PASSWORD` is strong and not committed
+- [ ] `.env` files are git-ignored (never commit secrets)
+- [ ] MongoDB Atlas network access is restricted
+- [ ] Cloudinary API secret is only in server env (never in the client)
+- [ ] `NODE_ENV=production` on the backend

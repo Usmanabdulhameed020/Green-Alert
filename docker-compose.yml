@@ -19,7 +19,7 @@ services:
     depends_on:
       - mongodb
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/greenalert
+      - MONGODB_URI=mongodb://usmansalimatayodele_db_user:oluwashola@ac-nqp0pnu-shard-00-00.99xcoyf.mongodb.net:27017,ac-nqp0pnu-shard-00-01.99xcoyf.mongodb.net:27017,ac-nqp0pnu-shard-00-02.99xcoyf.mongodb.net:27017/?ssl=true&replicaSet=atlas-9a0znx-shard-0&authSource=admin&appName=Cluster0
     volumes:
       - ./server/logs:/app/logs
 

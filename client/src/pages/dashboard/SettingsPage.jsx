@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   User,
   Bell,
@@ -17,10 +17,8 @@ import {
   Check,
 } from 'lucide-react';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useNotifications } from '../../contexts/NotificationContext';
-import { useConfirm } from '../../components/ui/ConfirmModal';
 import { useToast } from '../../contexts/ToastContext';
-import AlertModal from '../../components/ui/AlertModal';
+import { useModal } from '../../contexts/ModalContext';
 import axios from 'axios';
 
 // Simple Toggle Switch Component
@@ -48,14 +46,11 @@ const Toggle = ({ checked, onChange, label, desc }) => (
 
 export default function SettingsPage() {
   const { user, settings, updateUser, updateSettings, deleteAccount, reports } = useCitizen();
-  const { pushSupported, pushSubscribed, pushLoading, pushError, setPushError, enablePush, disablePush } = useNotifications();
-  const { confirm, ConfirmDialog } = useConfirm();
   const { success: toastSuccess, error: toastError } = useToast();
+  const { confirm: modalConfirm } = useModal();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('account');
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [alertMsg, setAlertMsg] = useState('');
 
   // Profile Form states
   const [fullName, setFullName] = useState(user?.fullName || '');
@@ -79,7 +74,7 @@ export default function SettingsPage() {
   const [allowContact, setAllowContact] = useState(settings?.allowContact ?? true);
 
   // Preference states
-  const [language, setLanguage] = useState(settings?.language || 'English');
+  const language = settings?.language || 'English';
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -160,10 +155,15 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    const check = await confirm('Are you absolutely sure you want to delete your GreenAlert account? All report logs and XP points will be permanently cleared.');
+    const check = await modalConfirm({
+      title: 'Permanently Delete Account?',
+      message: 'Are you absolutely sure you want to delete your GreenAlert account? All report logs, badges, and XP points will be permanently cleared and cannot be recovered.',
+      isDestructive: true,
+      confirmText: 'Delete My Account',
+      cancelText: 'Keep Account',
+    });
     if (!check) return;
 
-    setIsDeleting(true);
     try {
       await deleteAccount();
       toastSuccess('Account deleted permanently');
@@ -171,7 +171,6 @@ export default function SettingsPage() {
     } catch (err) {
       console.error('Failed to delete account:', err);
       toastError('Failed to delete account. Please try again.');
-      setIsDeleting(false);
     }
   };
 
@@ -425,41 +424,6 @@ export default function SettingsPage() {
                       label="Email Notifications"
                       desc="Receive status workflow alert mails regarding submitted reports."
                     />
-                    {pushSupported ? (
-                      <Toggle
-                        checked={pushSubscribed}
-                        onChange={async (val) => {
-                          setPushError('');
-                          if (val) {
-                            const ok = await enablePush();
-                            if (!ok) {
-                              toastError('Failed to enable push notifications. Check browser settings.');
-                            }
-                          } else {
-                            await disablePush();
-                          }
-                        }}
-                        label={pushLoading ? '⏳ Setting up...' : '🔔 Push Notifications (Free)'}
-                        desc={pushLoading ? 'Please wait...' : 'Receive instant browser notifications even when you\'re not on GreenAlert. Works on desktop and mobile.'}
-                      />
-                    ) : (
-                      <div className="flex items-start justify-between gap-4 py-3 opacity-60">
-                        <div className="space-y-0.5">
-                          <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block">🔔 Push Notifications</label>
-                          <p className="text-xs text-slate-400 font-semibold max-w-md">Not supported on this browser. Try Chrome, Edge, or Firefox.</p>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-semibold">Unavailable</span>
-                      </div>
-                    )}
-                    {pushError && (
-                      <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 mt-2">
-                        <p className="text-xs font-semibold text-rose-600">{pushError}</p>
-                        <button
-                          onClick={() => setPushError('')}
-                          className="text-[10px] text-rose-500 hover:text-rose-700 font-bold mt-1 underline cursor-pointer"
-                        >Dismiss</button>
-                      </div>
-                    )}
                     <Toggle
                       checked={statusUpdates}
                       onChange={(val) => {
@@ -528,7 +492,7 @@ export default function SettingsPage() {
                         const data = {
                           reports: filtered,
                           user: { name: user?.fullName, email: user?.email },
-                          settings: { publicReports, allowContact, emailNotif, statusUpdates, defaultCategory },
+                          settings: { publicReports, allowContact, emailNotif, statusUpdates },
                           downloadedAt: new Date().toISOString()
                         };
                         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -568,8 +532,6 @@ export default function SettingsPage() {
 
         </div>
       </div>
-      <ConfirmDialog />
-      <AlertModal isOpen={!!alertMsg} message={alertMsg} onClose={() => setAlertMsg('')} />
     </div>
   );
 }

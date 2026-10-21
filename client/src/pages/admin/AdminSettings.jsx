@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
@@ -6,14 +6,9 @@ import {
   Save,
   Loader2,
   Upload,
-  ShieldAlert,
-  Megaphone,
-  Check,
 } from 'lucide-react';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useNotifications } from '../../contexts/NotificationContext';
 import { useToast } from '../../contexts/ToastContext';
-import AlertModal from '../../components/ui/AlertModal';
 import axios from 'axios';
 
 // Reusable Toggle Switch
@@ -56,14 +51,12 @@ const TabBtn = ({ icon: Icon, label, active, onClick }) => (
 
 export default function AdminSettings() {
   const { user, updateUser } = useCitizen();
-  const { pushSupported, pushSubscribed, pushLoading, pushError, setPushError, enablePush, disablePush } = useNotifications();
   const { success: toastSuccess, error: toastError } = useToast();
   const [activeTab, setActiveTab] = useState('profile');
 
   const tabs = [
     { id: 'profile', label: 'Profile Info', icon: User },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'system', label: 'System & Maintenance', icon: ShieldAlert },
   ];
 
   // Profile state
@@ -80,43 +73,13 @@ export default function AdminSettings() {
   const [newOrgAlerts, setNewOrgAlerts] = useState(user?.settings?.newOrgAlerts ?? true);
   const [reportAssignedNotif, setReportAssignedNotif] = useState(user?.settings?.reportAssignedNotif ?? true);
 
-  // System Settings State
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [maintenanceMessage, setMaintenanceMessage] = useState('System is currently under scheduled maintenance.');
-  const [announcementEnabled, setAnnouncementEnabled] = useState(false);
-  const [announcementMessage, setAnnouncementMessage] = useState('Welcome to GreenAlert Environmental Portal');
-  const [isSavingSystem, setIsSavingSystem] = useState(false);
-
-  const [alertMsg, setAlertMsg] = useState('');
-
-  // Fetch System Settings on Mount
-  useEffect(() => {
-    const fetchSystemSettings = async () => {
-      try {
-        const { data } = await axios.get('/api/v1/system/settings');
-        if (data?.success && data.data) {
-          setMaintenanceMode(data.data.maintenanceMode || false);
-          if (data.data.maintenanceMessage) setMaintenanceMessage(data.data.maintenanceMessage);
-          setAnnouncementEnabled(data.data.announcementEnabled || false);
-          if (data.data.announcementMessage) setAnnouncementMessage(data.data.announcementMessage);
-        }
-      } catch (err) {
-        console.error('Failed to load system settings:', err);
-      }
-    };
-    fetchSystemSettings();
-  }, []);
-
-  // Handlers
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsSavingProfile(true);
     try {
       await updateUser({ fullName, phone, avatar });
-      setAlertMsg('Admin profile updated successfully!');
       toastSuccess('Profile updated!');
-    } catch (err) {
-      setAlertMsg('Failed to update profile. Please try again.');
+    } catch {
       toastError('Failed to update profile.');
     } finally {
       setIsSavingProfile(false);
@@ -137,12 +100,10 @@ export default function AdminSettings() {
         const url = res.data.data.urls?.[0] || res.data.data.url;
         setAvatar(url);
         await updateUser({ avatar: url });
-        setAlertMsg('Profile picture updated!');
         toastSuccess('Avatar updated!');
       }
     } catch (err) {
       console.error('Avatar upload failed:', err);
-      setAlertMsg('Failed to upload avatar. Please try again.');
       toastError('Failed to upload avatar.');
     } finally {
       setUploadingAvatar(false);
@@ -151,40 +112,15 @@ export default function AdminSettings() {
 
   const handleSaveNotifications = async () => {
     const prefs = { emailNotif, weeklyDigest, newUserAlerts, newOrgAlerts, reportAssignedNotif };
-    localStorage.setItem('greenalert_admin_notif_prefs', JSON.stringify(prefs));
     await updateUser({ settings: prefs });
-    setAlertMsg('Admin notification preferences saved!');
     toastSuccess('Notification preferences saved!');
-  };
-
-  const handleSaveSystemSettings = async (e) => {
-    e.preventDefault();
-    setIsSavingSystem(true);
-    try {
-      await axios.patch('/api/v1/system/maintenance', {
-        maintenanceMode,
-        maintenanceMessage,
-      });
-      await axios.patch('/api/v1/system/announcement', {
-        announcementEnabled,
-        announcementMessage,
-      });
-      setAlertMsg('System settings and maintenance configuration updated!');
-      toastSuccess('System configuration saved!');
-    } catch (err) {
-      console.error('Failed to update system settings:', err);
-      setAlertMsg('Failed to update system settings. Check permissions.');
-      toastError('Failed to save system settings.');
-    } finally {
-      setIsSavingSystem(false);
-    }
   };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto font-sans">
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900">Admin Portal Settings</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage your admin profile, system notification rules, and platform maintenance status.</p>
+        <p className="text-sm text-slate-500 mt-1">Manage your admin profile and notification preferences.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -299,40 +235,6 @@ export default function AdminSettings() {
                   </h3>
                   <div className="divide-y divide-slate-100">
                     <Toggle checked={emailNotif} onChange={setEmailNotif} label="Email Notifications" desc="Receive email updates for critical platform alerts." />
-                    {pushSupported ? (
-                      <div>
-                        <Toggle
-                          checked={pushSubscribed}
-                          onChange={async (val) => {
-                            setPushError('');
-                            if (val) {
-                              const ok = await enablePush();
-                              if (!ok) toastError('Failed to enable push notifications. Check browser settings.');
-                            } else {
-                              await disablePush();
-                            }
-                          }}
-                          label={pushLoading ? '⏳ Setting up...' : '🔔 Push Notifications (Free)'}
-                          desc={pushLoading ? 'Please wait...' : 'Receive instant browser push notifications for emergency reports and system changes.'}
-                        />
-                        {pushError && (
-                          <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-2 mt-2">
-                            <p className="text-[11px] font-semibold text-rose-600">{pushError}</p>
-                            <button onClick={() => setPushError('')} className="text-[10px] text-rose-500 hover:text-rose-700 font-bold mt-1 underline cursor-pointer">
-                              Dismiss
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between gap-4 py-3 opacity-60">
-                        <div className="space-y-0.5">
-                          <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block">🔔 Push Notifications</label>
-                          <p className="text-xs text-slate-400 font-semibold max-w-md">Not supported on this browser. Try Chrome, Edge, or Firefox.</p>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-semibold">Unavailable</span>
-                      </div>
-                    )}
                     <Toggle checked={weeklyDigest} onChange={setWeeklyDigest} label="Weekly Platform Digest" desc="Get a weekly summary of reports, users, and agency metrics." />
                     <Toggle checked={newUserAlerts} onChange={setNewUserAlerts} label="New Citizen Registrations" desc="Alert me when a new citizen registers on GreenAlert." />
                     <Toggle checked={newOrgAlerts} onChange={setNewOrgAlerts} label="New Organization Signups" desc="Alert me when an agency registers and awaits approval." />
@@ -346,76 +248,10 @@ export default function AdminSettings() {
                   </button>
                 </div>
               )}
-
-              {/* SYSTEM CONTROLS TAB */}
-              {activeTab === 'system' && (
-                <form onSubmit={handleSaveSystemSettings} className="space-y-6">
-                  <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <ShieldAlert className="h-5 w-5 text-amber-600" /> Platform Maintenance & System Controls
-                  </h3>
-
-                  <div className="space-y-6">
-                    {/* Maintenance Toggle */}
-                    <div className="bg-amber-50/50 border border-amber-200 rounded-2xl p-5 space-y-3">
-                      <Toggle
-                        checked={maintenanceMode}
-                        onChange={setMaintenanceMode}
-                        label="System Maintenance Mode"
-                        desc="When enabled, non-admin users will be presented with a maintenance screen."
-                      />
-                      {maintenanceMode && (
-                        <div className="space-y-1.5 pt-2">
-                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Maintenance Screen Message</label>
-                          <textarea
-                            rows={2}
-                            value={maintenanceMessage}
-                            onChange={(e) => setMaintenanceMessage(e.target.value)}
-                            className="w-full bg-white border border-amber-300 rounded-xl p-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Announcement Banner Toggle */}
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
-                      <div className="flex items-center gap-2 text-slate-800 font-bold text-xs uppercase tracking-wider">
-                        <Megaphone className="h-4 w-4 text-emerald-600" /> Global Announcement Banner
-                      </div>
-                      <Toggle
-                        checked={announcementEnabled}
-                        onChange={setAnnouncementEnabled}
-                        label="Enable System Announcement Banner"
-                        desc="Display a broadcast notification message across citizen and agency dashboards."
-                      />
-                      {announcementEnabled && (
-                        <div className="space-y-1.5 pt-2">
-                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Announcement Text</label>
-                          <input
-                            type="text"
-                            value={announcementMessage}
-                            onChange={(e) => setAnnouncementMessage(e.target.value)}
-                            className="w-full bg-white border border-slate-300 rounded-xl p-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSavingSystem}
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-98 cursor-pointer flex items-center gap-1.5 disabled:opacity-70"
-                  >
-                    {isSavingSystem ? <Loader2 className="h-4.5 w-4.5 animate-spin" /> : <Check className="h-4.5 w-4.5" />}
-                    {isSavingSystem ? 'Saving System Configuration...' : 'Apply System Controls'}
-                  </button>
-                </form>
-              )}
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
-      <AlertModal isOpen={!!alertMsg} message={alertMsg} onClose={() => setAlertMsg('')} />
     </div>
   );
 }

@@ -1,6 +1,4 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Building2, Heart, Truck, CheckCircle2, ShieldCheck, ExternalLink } from 'lucide-react';
 
 export default function Partners() {
@@ -39,8 +37,6 @@ export default function Partners() {
 
   return (
     <section id="partners" className="py-24 bg-slate-50 border-t border-slate-200 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#f0fdf4,transparent)] opacity-60 pointer-events-none" />
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold uppercase tracking-wider mb-4 shadow-sm">
@@ -56,19 +52,15 @@ export default function Partners() {
 
         {/* Partners Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {organizations.map((org, idx) => (
-            <motion.div
+          {organizations.map((org) => (
+            <div
               key={org.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className={`p-6 rounded-2xl border bg-white hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group shadow-md shadow-slate-100/50 ${org.bgColor}`}
+              className={`p-6 rounded-2xl border bg-white flex flex-col justify-between shadow-md shadow-slate-100/50 ${org.bgColor}`}
             >
               <div>
                 {/* Header Row */}
                 <div className="flex items-center justify-between mb-6">
-                  <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-300">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shadow-sm">
                     {org.icon}
                   </div>
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider bg-slate-100 border border-slate-200 px-2 py-0.5 rounded flex items-center gap-1">
@@ -81,7 +73,7 @@ export default function Partners() {
                 <span className="text-[10px] text-emerald-600 font-mono font-bold tracking-widest uppercase mb-1 block">
                   {org.type}
                 </span>
-                <h3 className="text-base font-bold text-slate-900 mb-3 group-hover:text-emerald-600 transition-colors duration-250">
+                <h3 className="text-base font-bold text-slate-900 mb-3">
                   {org.title}
                 </h3>
                 
@@ -105,17 +97,12 @@ export default function Partners() {
                   ))}
                 </ul>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Informative bottom banner */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="mt-12 p-6 rounded-2xl border border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-4 text-left shadow-md shadow-slate-100/50"
-        >
+        <div className="mt-12 p-6 rounded-2xl border border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-4 text-left shadow-md shadow-slate-100/50">
           <div className="flex items-center gap-4">
             <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-emerald-600 font-bold font-mono shadow-sm">
               API
@@ -129,12 +116,12 @@ export default function Partners() {
           </div>
           <Link
             to="/register-org"
-            className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+            className="px-5 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-sm"
           >
             Request Partner Access
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

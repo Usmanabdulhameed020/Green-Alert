@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Eye, EyeOff, Building2, Upload, Mail, Phone, ShieldCheck, MapPin, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Building2, Upload, Mail, ShieldCheck, MapPin, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import AuthLayout from '../components/auth/AuthLayout';
 import EmailStep from '../components/auth/EmailStep';

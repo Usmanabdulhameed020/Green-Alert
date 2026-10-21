@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, ArrowLeft, Wrench } from 'lucide-react';
-import SEO from '../components/SEO';
+import { Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import AuthLayout from '../components/auth/AuthLayout';
 import EmailStep from '../components/auth/EmailStep';
-import SocialLogin from '../components/auth/SocialLogin';
 import { useCitizen } from '../contexts/CitizenContext';
 
 const BASE = import.meta.env.VITE_API_URL;
@@ -19,17 +17,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [maintenance, setMaintenance] = useState(null);
   const navigate = useNavigate();
 
   if (user) return <Navigate to={user.role === 'admin' ? '/admin' : user.role === 'agency' ? '/agency' : '/citizen-dashboard'} replace />;
-
-  useEffect(() => {
-    fetch(`${API_URL}/system/settings`)
-      .then(r => r.json())
-      .then(d => { if (d.success && d.data?.maintenanceMode) setMaintenance(d.data); })
-      .catch(() => {});
-  }, []);
 
   const handleEmailSubmit = async (submittedEmail) => {
     setEmail(submittedEmail);
@@ -89,44 +79,7 @@ export default function Login() {
           setError(data.message);
           return;
         }
-        if (response.status === 429) {
-          throw new Error('Too many sign-in attempts. Please wait a moment and try again.');
-        }
         throw new Error(data.message || 'Login failed');
-      }
-
-      localStorage.setItem('greenalert_user', JSON.stringify(data.data.user));
-      localStorage.setItem('greenalert_token', data.data.token);
-      setUser(data.data.user);
-      setToken(data.data.token);
-
-      const role = data.data.user.role;
-      if (role === 'citizen') navigate('/citizen-dashboard');
-      else if (role === 'admin') navigate('/admin');
-      else if (role === 'agency') navigate('/agency');
-      else navigate('/citizen-dashboard');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleCredential = async (credential) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`${API_URL}/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken: credential }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Google authentication failed');
       }
 
       localStorage.setItem('greenalert_user', JSON.stringify(data.data.user));
@@ -156,17 +109,6 @@ export default function Login() {
       title="Welcome back"
       subtitle="Sign in to your account"
     >
-      {maintenance && (
-        <div className="mb-5 p-3.5 rounded-lg bg-amber-50 border border-amber-200">
-          <div className="flex items-center gap-2 mb-1">
-            <Wrench className="h-4 w-4 text-amber-600" />
-            <span className="text-xs font-extrabold text-amber-700">Under Maintenance</span>
-          </div>
-          <p className="text-[11px] text-amber-600">{maintenance.maintenanceMessage || 'The platform is currently undergoing scheduled maintenance.'}</p>
-          <p className="text-[10px] text-amber-500 mt-1">Only administrators can sign in during this time.</p>
-        </div>
-      )}
-
       {error && (
         <div className="mb-5 p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />
@@ -207,7 +149,6 @@ export default function Login() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-semibold text-slate-600">Password</label>
-                    <Link to="/forgot-password" className="text-[11px] text-emerald-600 font-semibold hover:text-emerald-500 transition-colors">Forgot?</Link>
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -245,10 +186,6 @@ export default function Login() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      <div className="mt-6">
-        <SocialLogin onCredential={handleGoogleCredential} isLoading={isLoading} />
       </div>
 
       <div className="mt-7 text-center text-sm text-slate-400 space-y-2.5">

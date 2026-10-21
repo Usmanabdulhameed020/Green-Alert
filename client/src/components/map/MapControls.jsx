@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Crosshair, Sun, Moon, Loader } from 'lucide-react';
+import { Search, Crosshair, Loader } from 'lucide-react';
 
-export function MapSearchBar({ mapRef, onResult }) {
+export function MapSearchBar({ onResult }) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -81,7 +81,7 @@ export function MapSearchBar({ mapRef, onResult }) {
   );
 }
 
-export function LocateMeButton({ mapRef, onLocated }) {
+export function LocateMeButton({ onLocated }) {
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState(null);
 

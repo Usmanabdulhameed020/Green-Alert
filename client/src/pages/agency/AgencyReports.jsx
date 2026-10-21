@@ -1,12 +1,11 @@
+﻿import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
-  Search, MapPin, User, Eye, Map as MapIcon, List, Layers,
+  Search, MapPin, User, Eye, Map as MapIcon, List,
   ArrowUpDown, ChevronDown,
 } from 'lucide-react';
 import axios from 'axios';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useSocket } from '../../contexts/SocketContext';
 import { useNavigate } from 'react-router-dom';
 import MapLibreMap from '../../components/map/MapLibreMap';
 
@@ -29,7 +28,6 @@ export default function AgencyReports() {
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'map'
   const { token, user } = useCitizen();
-  const { on } = useSocket();
   const navigate = useNavigate();
 
   const fetchReports = async () => {
@@ -46,29 +44,6 @@ export default function AgencyReports() {
   };
 
   useEffect(() => { fetchReports(); }, [token, user?._id]);
-
-  useEffect(() => {
-    if (!on) return;
-    const offAssigned = on('report:assigned', (report) => {
-      if (report.assignedTo?._id === user?.organizationId || report.assignedTo === user?.organizationId) {
-        setReports((prev) => {
-          const idx = prev.findIndex((r) => r._id === report._id);
-          if (idx >= 0) { const u = [...prev]; u[idx] = report; return u; }
-          return [report, ...prev];
-        });
-      }
-    });
-    const offStatus = on('report:status-changed', (report) => {
-      if (report.assignedTo?._id === user?.organizationId || report.assignedTo === user?.organizationId) {
-        setReports((prev) => {
-          const idx = prev.findIndex((r) => r._id === report._id);
-          if (idx >= 0) { const u = [...prev]; u[idx] = report; return u; }
-          return [report, ...prev];
-        });
-      }
-    });
-    return () => { offAssigned(); offStatus(); };
-  }, [on, user?.organizationId]);
 
   const handleStatus = async (reportId, status) => {
     try {

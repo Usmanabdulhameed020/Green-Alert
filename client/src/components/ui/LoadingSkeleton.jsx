@@ -1,4 +1,3 @@
-import React from 'react';
 
 const Pulse = ({ className = '' }) => (
   <div className={`animate-pulse bg-slate-200 rounded-xl ${className}`} />

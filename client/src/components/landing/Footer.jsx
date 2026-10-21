@@ -1,4 +1,3 @@
-import React from 'react';
 import { Globe, Terminal, MessageSquare, Mail, ArrowRight } from 'lucide-react';
 import logo from '../../assets/GreenAlert Logo.png';
 
@@ -8,14 +7,14 @@ export default function Footer() {
   const footerLinks = {
     product: [
       { name: 'Features', href: '#how-it-works' },
-      { name: 'GIS Live Map', href: '#map' },
-      { name: 'AI Triage Engine', href: '#ai' },
+      { name: 'GIS Live Map', href: '#how-it-works' },
+      { name: 'AI Triage Engine', href: '#how-it-works' },
       { name: 'API Access', href: '#partners' },
     ],
     resources: [
-      { name: 'Documentation', href: '#ai' },
-      { name: 'Community Guides', href: '#reports' },
-      { name: 'System Status', href: '#map' },
+      { name: 'Documentation', href: '#how-it-works' },
+      { name: 'Community Guides', href: '#categories' },
+      { name: 'System Status', href: '#home' },
       { name: 'Help Center', href: '#cta' },
     ],
     organization: [

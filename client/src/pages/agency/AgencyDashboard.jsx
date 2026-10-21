@@ -1,23 +1,16 @@
+﻿import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
-  ClipboardList, Clock, AlertTriangle, TrendingUp,
-  BarChart3, MapPin, User, Calendar,
+  ClipboardList, Clock, CheckCircle, TrendingUp, BarChart3,
 } from 'lucide-react';
 import axios from 'axios';
-import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell, BarChart, Bar,
-} from 'recharts';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useSocket } from '../../contexts/SocketContext';
 
 const statCards = [
-  { label: 'Assigned Reports', key: 'totalAssigned', icon: ClipboardList, color: 'bg-amber-500', textColor: 'text-amber-600', bgLight: 'bg-amber-50' },
-  { label: 'In Progress', key: 'inProgress', icon: Clock, color: 'bg-blue-500', textColor: 'text-blue-600', bgLight: 'bg-blue-50' },
-  { label: 'Resolved', key: 'resolved', icon: AlertTriangle, color: 'bg-emerald-500', textColor: 'text-emerald-600', bgLight: 'bg-emerald-50' },
-  { label: 'Resolution Rate', key: 'resolutionRate', icon: TrendingUp, color: 'bg-violet-500', textColor: 'text-violet-600', bgLight: 'bg-violet-50', suffix: '%' },
+  { label: 'Assigned Reports', key: 'totalAssigned', icon: ClipboardList, textColor: 'text-amber-600', bgLight: 'bg-amber-50' },
+  { label: 'In Progress', key: 'inProgress', icon: Clock, textColor: 'text-blue-600', bgLight: 'bg-blue-50' },
+  { label: 'Resolved', key: 'resolved', icon: CheckCircle, textColor: 'text-emerald-600', bgLight: 'bg-emerald-50' },
+  { label: 'Resolution Rate', key: 'resolutionRate', icon: TrendingUp, textColor: 'text-violet-600', bgLight: 'bg-violet-50', suffix: '%' },
 ];
 
 const categoryColors = {
@@ -30,7 +23,7 @@ const categoryColors = {
   'Deforestation': '#10b981',
 };
 
-const priorityColorsMap = {
+const priorityColors = {
   Critical: '#ef4444',
   High: '#f97316',
   Medium: '#eab308',
@@ -38,12 +31,10 @@ const priorityColorsMap = {
 };
 
 export default function AgencyDashboard() {
-  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const { token, user } = useCitizen();
-  const { on } = useSocket();
   const headers = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
@@ -64,38 +55,13 @@ export default function AgencyDashboard() {
     fetchData();
   }, [token]);
 
-  // Real-time updates
-  useEffect(() => {
-    if (!on) return;
-    const refreshStats = () => {
-      axios.get('/api/v1/agency/stats', { headers })
-        .then(({ data }) => setStats(data))
-        .catch(() => {});
-    };
-    const offStatus = on('report:status-changed', (updated) => {
-      setReports((prev) => prev.map((r) => (r._id === updated._id ? updated : r)));
-      refreshStats();
-    });
-    const offAssigned = on('report:assigned', (updated) => {
-      setReports((prev) => {
-        const idx = prev.findIndex((r) => r._id === updated._id);
-        if (idx >= 0) {
-          const copy = [...prev];
-          copy[idx] = updated;
-          return copy;
-        }
-        return [updated, ...prev];
-      });
-      refreshStats();
-    });
-    return () => { offStatus(); offAssigned(); };
-  }, [on, token]);
-
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-amber-500 border-t-transparent rounded-full" /></div>;
   if (!stats) return <p className="text-slate-500 text-sm">Failed to load stats.</p>;
 
   const categoryData = Object.entries(stats.reportsByCategory || {}).map(([name, value]) => ({ name, value }));
   const priorityData = Object.entries(stats.reportsByPriority || {}).map(([name, value]) => ({ name, value }));
+  const maxCategory = Math.max(1, ...categoryData.map((d) => d.value));
+  const maxPriority = Math.max(1, ...priorityData.map((d) => d.value));
 
   return (
     <div className="space-y-6">
@@ -141,67 +107,61 @@ export default function AgencyDashboard() {
         ))}
       </div>
 
-      {/* Charts Row */}
+      {/* Reports Over Time */}
+      {stats.reportsByMonth && stats.reportsByMonth.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports Over Time</h2>
+          <div className="h-44 flex items-end gap-3">
+            {(() => {
+              const max = Math.max(1, ...stats.reportsByMonth.map((m) => m.count));
+              return stats.reportsByMonth.map((m) => (
+                <div key={m.month} className="flex-1 flex flex-col items-center justify-end h-full gap-2">
+                  <span className="text-[11px] font-bold text-slate-600">{m.count}</span>
+                  <div className="w-full rounded-t-lg bg-gradient-to-t from-amber-500 to-amber-300" style={{ height: `${(m.count / max) * 100 || 2}%`, minHeight: '4px' }} />
+                  <span className="text-[11px] font-semibold text-slate-400">{m.month}</span>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Breakdown Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Line Chart */}
-        {stats.reportsByMonth && stats.reportsByMonth.length > 0 && (
+        {categoryData.length > 0 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports Over Time</h2>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.reportsByMonth}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="count" stroke="#d97706" strokeWidth={2.5} dot={{ fill: '#d97706', r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
+            <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports by Category</h2>
+            <div className="space-y-3">
+              {categoryData.map((d) => (
+                <div key={d.name} className="flex items-center gap-3">
+                  <span className="w-28 text-[11px] font-semibold text-slate-600 truncate">{d.name}</span>
+                  <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${(d.value / maxCategory) * 100}%`, backgroundColor: categoryColors[d.name] || '#94a3b8' }} />
+                  </div>
+                  <span className="w-6 text-right text-[11px] font-bold text-slate-700">{d.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Category Donut */}
-        {categoryData.length > 0 && (
+        {priorityData.length > 0 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports by Category</h2>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={categoryData} cx="50%" cy="50%" outerRadius={75} innerRadius={40} dataKey="value" nameKey="name" label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
-                    {categoryData.map((entry) => (
-                      <Cell key={entry.name} fill={categoryColors[entry.name] || '#94a3b8'} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+            <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports by Priority</h2>
+            <div className="space-y-3">
+              {priorityData.map((d) => (
+                <div key={d.name} className="flex items-center gap-3">
+                  <span className="w-28 text-[11px] font-semibold text-slate-600">{d.name}</span>
+                  <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${(d.value / maxPriority) * 100}%`, backgroundColor: priorityColors[d.name] || '#94a3b8' }} />
+                  </div>
+                  <span className="w-6 text-right text-[11px] font-bold text-slate-700">{d.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
       </div>
-
-      {/* Priority Bar Chart */}
-      {priorityData.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports by Priority</h2>
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={priorityData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" name="Reports">
-                  {priorityData.map((entry) => (
-                    <Cell key={entry.name} fill={priorityColorsMap[entry.name] || '#94a3b8'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
 
       {/* Recent Reports */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">

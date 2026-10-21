@@ -1,11 +1,9 @@
-import React from 'react';
 import Navbar from '../components/landing/Navbar';
 import Hero from '../components/landing/Hero';
 import Stats from '../components/landing/Stats';
 import HowItWorks from '../components/landing/HowItWorks';
 import ProblemSolution from '../components/landing/ProblemSolution';
 import Categories from '../components/landing/Categories';
-import AISection from '../components/landing/AISection';
 import Partners from '../components/landing/Partners';
 import Testimonials from '../components/landing/Testimonials';
 import CTA from '../components/landing/CTA';
@@ -26,7 +24,6 @@ export default function Home() {
         <HowItWorks />
         <ProblemSolution />
         <Categories />
-        <AISection />
         <Partners />
         <Testimonials />
         <CTA />

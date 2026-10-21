@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenAlert - Complete File-by-File Code & Function Guide</title>
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-dark: #047857;
+      --primary-light: #ecfdf5;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: var(--slate-800);
+      background-color: var(--slate-50);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+      padding: 3rem;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .container { border: none; box-shadow: none; padding: 0; max-width: 100%; }
+      .no-print { display: none !important; }
+    }
+    .header {
+      border-bottom: 2px solid var(--slate-100);
+      padding-bottom: 2rem;
+      margin-bottom: 2.5rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 700;
+      font-size: 0.75rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.025em;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      font-size: 1.125rem;
+      color: var(--slate-500);
+      font-weight: 500;
+    }
+    .actions { display: flex; gap: 1rem; margin-bottom: 2rem; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.875rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--slate-200);
+      padding-bottom: 0.5rem;
+    }
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .file-card {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .file-title {
+      font-family: monospace;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 0.5rem;
+    }
+    .func-list {
+      margin-left: 1.25rem;
+      margin-top: 0.5rem;
+    }
+    .func-item {
+      margin-bottom: 0.75rem;
+    }
+    .func-name {
+      font-family: monospace;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    code {
+      background: var(--slate-100);
+      padding: 0.2rem 0.4rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="actions no-print">
+      <button class="btn" onclick="window.print()">
+        📄 Download File-by-File Code Guide as PDF / Print
+      </button>
+    </div>
+
+    <div class="header">
+      <span class="badge">Complete Codebase & Function Manual</span>
+      <h1>GreenAlert - File-by-File Codebase & Function Guide</h1>
+      <p class="subtitle">Complete Technical Explanation of Every File and Function Across Client and Server</p>
+    </div>
+
+    <h2>1. Backend Server Files (`/server/src`)</h2>
+
+    <div class="file-card">
+      <div class="file-title">📁 server/src/server.js</div>
+      <p><strong>Purpose:</strong> Main entry point of the backend server application.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">server.listen(PORT)</span>: Binds Express HTTP and Socket.IO server to network port 5000 and connects to MongoDB.</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 server/src/app.js</div>
+      <p><strong>Purpose:</strong> Express application configuration middleware setup.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">app.use(cors())</span>: Configures Cross-Origin Resource Sharing so browser clients on Vercel can access the API.</div>
+        <div class="func-item"><span class="func-name">app.use(helmet())</span>: Sets security HTTP headers (X-Frame-Options, CSP, X-XSS-Protection).</div>
+        <div class="func-item"><span class="func-name">app.use('/api/v1/...')</span>: Registers API route routers.</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 server/src/controllers/report.controller.js</div>
+      <p><strong>Purpose:</strong> Handles incident report management logic.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">createReport(req, res)</span>: Saves new report in MongoDB with 2dsphere GeoJSON location point, auto-assigns nearest organization, triggers email alert, and emits Socket.IO event.</div>
+        <div class="func-item"><span class="func-name">getAllReports(req, res)</span>: Fetches public environmental reports for explore map with filter parameters.</div>
+        <div class="func-item"><span class="func-name">updateReportStatus(req, res)</span>: Updates ticket resolution status, logs audit event, and sends real-time socket + email notification.</div>
+        <div class="func-item"><span class="func-name">getMyReports(req, res)</span>: Fetches incident reports logged by the currently authenticated user.</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 server/src/controllers/auth.controller.js</div>
+      <p><strong>Purpose:</strong> Authentication and user session controller.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">register(req, res)</span>: Hashes password with bcrypt (12 salt rounds), creates User document, signs JWT token.</div>
+        <div class="func-item"><span class="func-name">login(req, res)</span>: Compares bcrypt password hashes and issues signed JWT session token.</div>
+        <div class="func-item"><span class="func-name">forgotPassword(req, res)</span>: Generates 6-digit verification code and dispatches email via Brevo.</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 server/src/controllers/ai.controller.js</div>
+      <p><strong>Purpose:</strong> AI enrichment & duplicate detection controller.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">analyzeReport(req, res)</span>: Sends report text to Gemini AI via `generateText()`. Parses structured JSON for summary, category, and severity. Falls back to `localAnalysis()` if AI is unavailable.</div>
+        <div class="func-item"><span class="func-name">findDuplicates(report)</span>: Scans same-category reports created within 7 days and computes Jaccard word similarity to flag duplicate tickets.</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 server/src/services/ai.service.js</div>
+      <p><strong>Purpose:</strong> Reusable Gemini AI content generation service with multi-model fallback chain.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">generateText(prompt)</span>: Executes a fallback loop across candidate models (`gemini-2.0-flash`, `gemini-1.5-flash`, `gemini-1.5-pro`) to ensure reliability even under rate limits.</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 server/src/services/email.service.js</div>
+      <p><strong>Purpose:</strong> Transactional email dispatcher via Brevo API SDK.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">sendWelcomeEmail(to, name)</span>: Sends welcoming HTML email to new users.</div>
+        <div class="func-item"><span class="func-name">sendReportSubmittedEmail(to, name, report)</span>: Sends receipt email to citizens when report is logged.</div>
+        <div class="func-item"><span class="func-name">sendReportStatusEmail(to, name, title, status)</span>: Notifies citizen when an agency updates their ticket status.</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 server/src/services/socket.service.js</div>
+      <p><strong>Purpose:</strong> Socket.IO real-time WebSocket connection manager.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">initSocket(server)</span>: Attaches Socket.IO server, manages user rooms (`user:id`), and handles real-time message broadcasting.</div>
+      </div>
+    </div>
+
+    <h2>2. Frontend Client Files (`/client/src`)</h2>
+
+    <div class="file-card">
+      <div class="file-title">📁 client/src/pages/dashboard/CreateReport.jsx</div>
+      <p><strong>Purpose:</strong> 7-step interactive report creation wizard.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">fetchGeocodeWithFallback(address)</span>: Progressive search algorithm. If exact address is unindexed, strips building numbers and falls back to nearest known landmarks/neighborhoods.</div>
+        <div class="func-item"><span class="func-name">reverseGeocode(lat, lng)</span>: Queries OpenStreetMap Nominatim reverse geocoder on map click or current GPS locate.</div>
+        <div class="func-item"><span class="func-name">handleUseCurrentLocation()</span>: Obtains hardware GPS coordinates via `navigator.geolocation.getCurrentPosition()`.</div>
+        <div class="func-item"><span class="func-name">handleSubmit()</span>: Uploads photos/videos to Cloudinary and submits complete report object to Express backend API.</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 client/src/components/map/MapLibreMap.jsx</div>
+      <p><strong>Purpose:</strong> Multi-source GIS satellite map component.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">MapLibreMap(...)</span>: Renders GPU-accelerated satellite maps with MapLibre GL JS. Defaults to **Google Hybrid** tile provider and renders clustering and active sonar pulse layers.</div>
+        <div class="func-item"><span class="func-name">handleSwitchProvider(providerId)</span>: Switches active basemap style between Google Hybrid, Google Pure Satellite, and Esri HD Aerial.</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 client/src/contexts/CitizenContext.jsx</div>
+      <p><strong>Purpose:</strong> Global React state context provider for citizen state, reports list, and notifications.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">CitizenProvider({ children })</span>: Holds state for reports, user profile, and notifications; exposes API wrapper functions (`createReport`, `fetchReports`, `logout`).</div>
+      </div>
+    </div>
+
+    <div class="file-card">
+      <div class="file-title">📁 client/src/layouts/DashboardLayout.jsx</div>
+      <p><strong>Purpose:</strong> Responsive layout shell for the citizen dashboard.</p>
+      <div class="func-list">
+        <div class="func-item"><span class="func-name">DashboardLayout()</span>: Renders top navigation bar, collapsible desktop sidebar, mobile drawer, and Socket.IO real-time notification listener.</div>
+      </div>
+    </div>
+
+    <div class="header" style="margin-top: 3rem; border-top: 2px solid var(--slate-100); padding-top: 2rem;">
+      <p style="text-align: center; font-size: 0.85rem; color: var(--slate-500);">
+        GreenAlert Codebase Manual &copy; 2026. Saved locally in <code>client/public/GreenAlert_PRD.html</code>.
+      </p>
+    </div>
+  </div>
+
+</body>
+</html>

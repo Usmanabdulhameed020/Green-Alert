@@ -1,8 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Layers, Check, Globe, Map } from 'lucide-react';
-import { AOShadowLayer } from './ao-shadow.mjs';
+import { Layers, Check } from 'lucide-react';
 
 /* ─── Multi-Source Satellite Map Tile Definitions ───────────────── */
 const ESRI_SATELLITE_STYLE = {
@@ -131,7 +130,6 @@ const LAYER_IDS = {
 
 export default function MapLibreMap({
   mapRef: externalMapRef,
-  style = 'light',
   center: centerProp,
   zoom: zoomProp,
   interactive = true,

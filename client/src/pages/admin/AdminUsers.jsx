@@ -1,17 +1,16 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, User, Mail, Shield, Trash2, Calendar, Ban, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, User, Mail, Trash2, Calendar, Ban, CheckCircle, X } from 'lucide-react';
 import axios from 'axios';
 import { useCitizen } from '../../contexts/CitizenContext';
-import AlertModal from '../../components/ui/AlertModal';
+import { useModal } from '../../contexts/ModalContext';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const { token } = useCitizen();
-  const [alertMsg, setAlertMsg] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const { error: modalError, success: modalSuccess, confirm: modalConfirm } = useModal();
   const [selected, setSelected] = useState(new Set());
   const [banReason, setBanReason] = useState('');
   const [banModal, setBanModal] = useState(null);
@@ -20,11 +19,11 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      const { data } = await axios.get('/api/v1/admin/users', { headers });
-      setUsers(data);
+const { data } = await axios.get('/api/v1/admin/users', { headers });
+setUsers(data.users || []);
     } catch (err) {
       console.error('Failed to fetch users:', err);
-      setAlertMsg('Failed to load users.');
+      modalError('Failed to load users.');
     } finally {
       setLoading(false);
     }
@@ -49,16 +48,20 @@ export default function AdminUsers() {
     }
   };
 
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
+  const confirmDelete = async (user) => {
+    const ok = await modalConfirm({
+      title: 'Delete User Account',
+      message: `Are you sure you want to delete ${user.fullName}? This will also remove their reports and organizations.`,
+      isDestructive: true,
+      confirmText: 'Delete User',
+    });
+    if (!ok) return;
     try {
-      await axios.delete(`/api/v1/admin/users/${deleteTarget._id}`, { headers });
-      setAlertMsg('User deleted successfully.');
-      setDeleteTarget(null);
+      await axios.delete(`/api/v1/admin/users/${user._id}`, { headers });
+      modalSuccess('User deleted successfully.');
       fetchUsers();
     } catch (err) {
-      setAlertMsg(err.response?.data?.message || 'Failed to delete user.');
-      setDeleteTarget(null);
+      modalError(err.response?.data?.message || 'Failed to delete user.');
     }
   };
 
@@ -66,28 +69,28 @@ export default function AdminUsers() {
     if (!banModal) return;
     try {
       if (banModal.type === 'single') {
-        const { data } = await axios.patch(`/api/v1/admin/users/${banModal.user._id}/ban`, { reason: banReason }, { headers });
-        setAlertMsg(data.message || 'User banned successfully.');
+        const { data } = await axios.patch(`/api/v1/admin/users/${banModal.user._id}/ban`, { banReason }, { headers });
+        modalSuccess(data.message || 'User banned successfully.');
       } else if (banModal.type === 'bulk') {
-        const { data } = await axios.post('/api/v1/admin/users/bulk-ban', { userIds: banModal.userIds, reason: banReason }, { headers });
-        setAlertMsg(data.message || 'Users banned successfully.');
+        const { data } = await axios.post('/api/v1/admin/users/bulk-ban', { userIds: banModal.userIds, banReason }, { headers });
+        modalSuccess(data.message || 'Users banned successfully.');
       }
       setBanModal(null);
       setBanReason('');
       setSelected(new Set());
       fetchUsers();
     } catch (err) {
-      setAlertMsg(err.response?.data?.message || 'Failed to ban user(s).');
+      modalError(err.response?.data?.message || 'Failed to ban user(s).');
     }
   };
 
   const handleUnban = async (user) => {
     try {
       const { data } = await axios.patch(`/api/v1/admin/users/${user._id}/unban`, {}, { headers });
-      setAlertMsg(data.message || 'User unbanned successfully.');
+      modalSuccess(data.message || 'User unbanned successfully.');
       fetchUsers();
     } catch (err) {
-      setAlertMsg(err.response?.data?.message || 'Failed to unban user.');
+      modalError(err.response?.data?.message || 'Failed to unban user.');
     }
   };
 
@@ -223,7 +226,7 @@ export default function AdminUsers() {
                         )
                       )}
                       {u.role !== 'admin' && (
-                        <button onClick={() => setDeleteTarget(u)}
+                        <button onClick={() => confirmDelete(u)}
                           className="flex items-center gap-1 text-[10px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Delete
@@ -241,16 +244,6 @@ export default function AdminUsers() {
           </div>
         </div>
       </div>
-
-      {/* Delete Confirmation */}
-      <AlertModal
-        isOpen={!!deleteTarget}
-        message={`Are you sure you want to delete ${deleteTarget?.fullName}? This will also remove their reports and organizations.`}
-        onConfirm={confirmDelete}
-        onClose={() => setDeleteTarget(null)}
-        confirmText="Delete"
-        confirmDanger
-      />
 
       {/* Ban Reason Modal */}
       {banModal && (
@@ -287,9 +280,6 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
-
-      {/* Feedback Alert */}
-      <AlertModal isOpen={!!alertMsg && !deleteTarget && !banModal} message={alertMsg} onClose={() => setAlertMsg('')} />
     </div>
   );
 }

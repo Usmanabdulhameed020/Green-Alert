@@ -1,16 +1,60 @@
-# React + Vite
+# GreenAlert — Client (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The React + Vite frontend for GreenAlert. See the [root README](../README.md) for the full project overview and [docs/](../docs/) for architecture, API, and setup details.
 
-Currently, two official plugins are available:
+## Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+The app runs at `http://localhost:5173`. API requests to `/api` are proxied to `http://localhost:5000` in development (see `vite.config.js`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Environment
 
-## Expanding the ESLint configuration
+Create a `.env` file:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+Leave `VITE_API_URL` unset in development to use the Vite proxy. In production, set it to your deployed API URL before building (Vite bakes env values in at build time).
+
+> `VITE_MAPTILER_KEY` and `VITE_GOOGLE_CLIENT_ID` may appear in existing env files but are unused — the map uses free ESRI/Google raster tiles and there is no social login.
+
+## Scripts
+
+| Script | Does |
+|--------|------|
+| `npm run dev` | Start the dev server |
+| `npm run dev:host` | Dev server exposed on the network |
+| `npm run build` | Production build into `dist/` |
+| `npm run preview` | Preview the built `dist/` locally |
+| `npm run lint` | Run ESLint |
+| `npm run test:mobile` | Serve `dist/` at port 5173 for device testing |
+
+## Tech Stack
+
+React 19 · Vite 8 · Tailwind CSS v4 · React Router v7 · Framer Motion · MapLibre GL · Axios · lucide-react
+
+## Structure
+
+```
+src/
+├── main.jsx           # Entry point; sets Axios baseURL + credentials
+├── App.jsx            # Route table (public + 3 role dashboards)
+├── components/        # landing/, map/, ui/, auth/, SEO
+├── contexts/          # CitizenContext (session), ToastContext
+├── layouts/           # DashboardLayout, AgencyLayout, AdminLayout
+└── pages/             # Home, auth pages, dashboard/, admin/, agency/
+```
+
+## Routing
+
+- **Public:** `/`, `/login`, `/signup`, `/register-org`, `/privacy`, `/terms`
+- **Citizen:** `/citizen-dashboard/*` (guarded, `citizen` only)
+- **Agency:** `/agency/*` (guarded, `agency` only)
+- **Admin:** `/admin/*` (guarded, `admin` only)
+
+Client-side guards live in `components/ui/ProtectedRoute.jsx`. The server enforces the real rules.

@@ -1,6 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import SEO from '../SEO';
 
 export default function AuthLayout({ title, subtitle, children, backTo = '/', showLogo = true, accent = 'emerald' }) {

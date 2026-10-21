@@ -1,108 +1,186 @@
-# 📊 GreenAlert Presentation Slide Deck Outline
+# 🎤 Presentation Slides (Talk Outline)
 
-This outline provides ready-to-use content and speaker scripts for presenting **GreenAlert** to judges, clients, or team members. 
-
----
-
-## Slide 1: Title Slide
-### **GreenAlert 🌱**
-*Environmental reporting and monitoring platform connecting citizens, agencies, and administrators for a cleaner, safer environment.*
-
-* **Sub-text:** Empowering Communities, Streamlining Resolutions.
-* **Presenter:** [Your Name]
-
-> [!NOTE]
-> **Speaker Script:**
-> *"Hello everyone. Today, I'm excited to present GreenAlert, an environmental reporting and monitoring platform designed to bridge the communication gap between active citizens and public safety or environmental agencies to keep our communities clean and safe."*
+A ready-to-use outline for presenting GreenAlert. Each `---` is one slide. Speaker notes are in italics.
 
 ---
 
-## Slide 2: The Problem
-### **Why Communities Struggle with Environmental Hazards**
-* **Lack of Transparency:** Citizens report issues (illegal dumping, pipe leaks, trash) but never know if they are received or being worked on.
-* **Disjointed Channels:** Reports are scattered across emails, phone calls, and social media.
-* **Agency Overwhelm:** Sanitation and environmental agencies struggle to categorize, check for duplicates, and map hazards effectively.
+## Slide 1 — Title
 
-> [!NOTE]
-> **Speaker Script:**
-> *"We see environmental hazards every day—illegal waste dumps, toxic spills, broken drainage systems. But the path to reporting them is broken. Citizens feel their complaints disappear into a black hole, while response agencies are overwhelmed with disorganized, uncategorized reports."*
+# GreenAlert 🌱
+### Reporting environmental problems, one report at a time
+
+*Speaker: Introduce yourself and the one-line pitch. This is a web platform that connects citizens who spot environmental problems with the agencies responsible for fixing them.*
 
 ---
 
-## Slide 3: The Solution
-### **Introducing GreenAlert**
-An all-in-one ecosystem connecting citizens, agencies, and administrators in real time.
-* **Immediate Reporting:** Citizens submit reports with photos and live coordinates.
-* **AI-Assisted Processing:** Automatically processes severity, category, and duplicate detection.
-* **Dynamic Management:** Agencies track, assign, and update incidents transparently.
+## Slide 2 — The Problem
 
-> [!NOTE]
-> **Speaker Script:**
-> *"GreenAlert is the solution. It brings citizens and environmental response agencies onto a single, real-time map. Citizens report issues with direct location data, our backend parses it, and response agencies manage the lifecycle of that report transparently from pending to resolved."*
+**Environmental issues go unreported or get lost.**
 
----
+- Citizens spot illegal dumping, blocked drainage, oil spills, flooding
+- No easy way to report with evidence and location
+- Reports get lost in phone calls and WhatsApp groups
+- No tracking — people never know if anything happened
+- Agencies lack a single view of what needs attention
 
-## Slide 4: The MVP Core Features
-### **The Minimum Viable Product**
-* **Role-Based Portals:** Custom interfaces tailored for Citizens (reporting & maps) and Agencies (incident pipelines).
-* **Incident Creation:** Submit detailed reports containing descriptions, GPS coordinates, and media uploads.
-* **Resolution Pipeline:** Agencies track reports by state: `Pending` ➡️ `In Progress` ➡️ `Resolved`.
-* **Real-time Status Updates:** Instant UI refreshes when status changes (powered by WebSockets).
-
-> [!NOTE]
-> **Speaker Script:**
-> *"For our Minimum Viable Product, we focused on the core report-and-resolve loop. Citizens can easily pinpoint issues on a map and upload media evidence. Agencies receive this directly, move it along the resolution pipeline, and the citizen receives real-time updates as action is taken."*
+*Speaker: Make it relatable — everyone has seen something wrong in their neighbourhood and not known who to tell.*
 
 ---
 
-## Slide 5: The Technology Stack
-### **Robust & Scalable Infrastructure**
+## Slide 3 — The Solution
 
-| Layer | Technology | Key Purpose |
-| :--- | :--- | :--- |
-| **Frontend** | React 19 + Tailwind CSS | Highly responsive, fluid user interface. |
-| **Backend** | Node.js + Express 5 | Lightweight, secure REST APIs. |
-| **Database** | MongoDB + Mongoose | Flexible document schema for reports and messages. |
-| **Real-time** | Socket.io | Instant updates and messaging feeds. |
-| **Media Host** | Cloudinary CDN | Fast, optimized processing of images and videos. |
+**A single platform with a clear workflow.**
 
-> [!NOTE]
-> **Speaker Script:**
-> *"Under the hood, GreenAlert uses a modern stack. The frontend is powered by React 19 for fluid responsiveness, the backend is built on Node and Express, and MongoDB stores the data. Socket.io manages all real-time events, and Cloudinary handles secure image and video hosting."*
+> Citizen reports → Admin assigns → Agency fixes → Everyone tracks
+
+- Report with photo + map location
+- A transparent status pipeline
+- Three role-based dashboards
+- One shared map of everything happening
 
 ---
 
-## Slide 6: Premium Features (AI & Notifications)
-### **Taking GreenAlert to the Next Level**
-* **Google Gemini 2.0 AI Integration:** Parses report text to automatically tag the hazard category, assess priority level, and prevent duplicate reports.
-* **Free Web Push Notifications:** Citizens receive native mobile or desktop notifications when an agency updates their report, even if their browser is closed.
-* **Gamification Engine:** Citizens earn Experience Points (XP) and unlock achievements for submitting valid reports, encouraging civic participation.
+## Slide 4 — Who It's For (3 Roles)
 
-> [!NOTE]
-> **Speaker Script:**
-> *"Beyond a basic CRUD app, GreenAlert uses Google Gemini AI to analyze report descriptions, automatically setting severity levels and detecting duplicate logs. We've also added native browser push notifications to keep users engaged and a gamification model where active citizens earn XP for cleaning up their community."*
+| Role | What they do |
+|------|--------------|
+| **Citizen** | Report issues, browse the map, track their reports |
+| **Agency** | See assigned reports, mark progress, upload proof of resolution |
+| **Admin** | Oversee everything, assign reports, manage users, verify agencies |
 
----
-
-## Slide 7: Live Demo Walkthrough
-### **Demonstrating the System Loop**
-1. **Citizen Submission:** User uploads an image of trash pile ➡️ sets location on the map.
-3. **Agency Assignment:** Agency claims the incident and sets status to "In Progress".
-4. **Resolution:** Agency updates status to "Resolved" ➡️ Citizen gets instant push notification.
-
-> [!NOTE]
-> **Speaker Script:**
-> *"Let's trace a typical user journey. A citizen spots a pile of illegal trash, snaps a photo, and drops a pin on the map. Instantly, Gemini AI categorizes it, and an agency worker claims it. Once cleaned, they mark it resolved, and the citizen's device gets a notification showing their environment is now clean."*
+*Speaker: Emphasize that each role only sees what it needs — separation of concerns.*
 
 ---
 
-## Slide 8: Summary & Future Scope
-### **The Future of GreenAlert**
-* **Platform Integrations:** Direct SMS reporting for non-smartphone users.
-* **AI Routing:** Auto-assign reports to the closest specific agency team based on jurisdiction.
-* **Predictive Analysis:** Identify municipal waste hot-spots over time to help city planning.
-* **Open Discussion:** Questions?
+## Slide 5 — Key Feature: The Status Pipeline
 
-> [!NOTE]
-> **Speaker Script:**
-> *"In the future, we plan to support SMS reporting for users without internet connectivity, auto-routing reports to specific teams using geofencing, and analyzing municipal data to predict waste hot-spots. Thank you for your time, I am now open to any questions!"*
+```
+Submitted → Under Review → Assigned → In Progress → Resolved → Closed
+```
+
+- Every report is always in exactly one stage
+- Citizens watch the status change in real time
+- Closed = done, locked from further edits
+
+*Speaker: This is the heart of the app — a predictable, fair workflow.*
+
+---
+
+## Slide 6 — Key Feature: Reports with Evidence
+
+- Title, description, category, priority
+- **Map location** (latitude/longitude) picked on a map
+- **Photos uploaded to Cloudinary**
+- Resolution proof: agencies attach after-photos + notes
+
+*Speaker: Evidence is what makes a report actionable.*
+
+---
+
+## Slide 7 — Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19 · Vite · Tailwind CSS · React Router · MapLibre GL |
+| Backend | Node.js · Express 5 |
+| Database | MongoDB + Mongoose |
+| Auth | JWT (cookie + bearer) |
+| Uploads | Cloudinary |
+| Config | envalid |
+
+*Speaker: Standard, well-supported MERN stack.*
+
+---
+
+## Slide 8 — Architecture
+
+```
+React (SPA) ──HTTP/JSON──► Express API ──► MongoDB
+      ▲                          │
+      └────── Cloudinary ◄────────┘ (image URLs)
+```
+
+- Client never talks to the database directly
+- Server owns all business logic and permissions
+- Cookie/bearer token on every authenticated request
+
+*Speaker: Point out the clean separation: UI, API, data.*
+
+---
+
+## Slide 9 — Security Model
+
+- Passwords hashed with **bcrypt** (never returned)
+- **JWT** carries only the user id
+- Every protected request re-loads the user → role & ban status always current
+- `protect` (are you logged in?) + `authorize(...roles)` (are you allowed?)
+- Agencies can't log in until an admin verifies them
+
+*Speaker: The two-layer middleware is the key idea — authentication vs authorization.*
+
+---
+
+## Slide 10 — Data Model
+
+- **User** — identity, role, status, settings
+- **Report** — the incident, author, assigned agency, status, evidence
+- **Organization** — an agency's profile + verification state
+
+*Speaker: Three collections, straightforward relationships.*
+
+---
+
+## Slide 11 — Demo
+
+1. Register as a citizen → create a report with a photo + map pin
+2. Log in as admin → assign the report to an agency
+3. Log in as agency → move it to In Progress → Resolved (with proof)
+4. Back as citizen → see the status updated
+
+*Speaker: This is the money slide. Do it live if possible; keep a backup recording.*
+
+---
+
+## Slide 12 — What We Simplified
+
+- Removed AI/chatbot, forums, gamification, push notifications, social login
+- Focused on the **core loop**: report → assign → resolve
+- Result: a smaller, clearer, easier-to-maintain codebase
+
+*Speaker: Scope control is a strength — a focused product beats a bloated one.*
+
+---
+
+## Slide 13 — What's Next
+
+- Notifications (email/SMS) on status changes
+- Mobile app
+- Analytics for agencies
+- Map clustering & heatmaps for hotspots
+
+---
+
+## Slide 14 — Thank You
+
+**Questions?**
+
+*Speaker: Keep contact details on screen. Thank the audience.*
+
+---
+
+## Appendix — Likely Questions & Answers
+
+**Q: Why Mongo instead of SQL?**
+Flexible document model, quick to iterate, great fit for nested report data, easy Atlas hosting.
+
+**Q: How do you stop fake reports?**
+Accounts are authenticated; admins can ban users; agencies verify resolution with photos.
+
+**Q: How is security handled?**
+Hashed passwords, JWT auth, server-side role checks on every route, banned-user blocking at the auth layer.
+
+**Q: How do images work?**
+Uploaded to Cloudinary; only the URL is stored in MongoDB.
+
+**Q: How would it scale?**
+Stateless Express API (scale horizontally), MongoDB Atlas, Cloudinary CDN for media.

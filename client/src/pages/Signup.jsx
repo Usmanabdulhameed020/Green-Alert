@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { User, Lock, Eye, EyeOff, ArrowLeft, ShieldCheck, TreePine, Building2, MapPin } from 'lucide-react';
 import AuthLayout from '../components/auth/AuthLayout';
 import EmailStep from '../components/auth/EmailStep';
-import SocialLogin from '../components/auth/SocialLogin';
 import { useCitizen } from '../contexts/CitizenContext';
 
 const BASE = import.meta.env.VITE_API_URL;
@@ -81,36 +80,6 @@ export default function Signup() {
 
       if (!response.ok) {
         throw new Error(data.message || 'Signup failed');
-      }
-
-      localStorage.setItem('greenalert_user', JSON.stringify(data.data.user));
-      localStorage.setItem('greenalert_token', data.data.token);
-      setUser(data.data.user);
-      setToken(data.data.token);
-
-      navigate('/citizen-dashboard');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleCredential = async (credential) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`${API_URL}/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken: credential }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Google authentication failed');
       }
 
       localStorage.setItem('greenalert_user', JSON.stringify(data.data.user));
@@ -227,10 +196,6 @@ export default function Signup() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      <div className="mt-6">
-        <SocialLogin onCredential={handleGoogleCredential} isLoading={isLoading} />
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
