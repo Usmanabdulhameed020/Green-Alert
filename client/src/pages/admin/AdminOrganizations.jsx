@@ -14,7 +14,7 @@ export default function AdminOrganizations() {
   const [search, setSearch] = useState('');
   const [reviewOrg, setReviewOrg] = useState(null);
   const { token } = useCitizen();
-  const { confirm: modalConfirm, error: modalError, success: modalSuccess } = useModal();
+  const { confirm: modalConfirm, success: modalSuccess } = useModal();
 
   const fetchOrgs = async () => {
     try {
