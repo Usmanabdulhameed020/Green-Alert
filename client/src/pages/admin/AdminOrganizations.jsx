@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import {
-  Search, Building2, Mail, Phone, MapPin, Globe, CheckCircle, XCircle, Trash2,
-  Eye, X, FileText, Calendar, User, ExternalLink,
+  Search, Building2, Mail, Phone, MapPin, Globe, CheckCircle, Trash2,
+  Eye, X, FileText, Calendar, ExternalLink,
 } from 'lucide-react';
 import axios from 'axios';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useConfirm } from '../../components/ui/ConfirmModal';
+import { useModal } from '../../contexts/ModalContext';
 
 export default function AdminOrganizations() {
   const [orgs, setOrgs] = useState([]);
@@ -14,7 +14,7 @@ export default function AdminOrganizations() {
   const [search, setSearch] = useState('');
   const [reviewOrg, setReviewOrg] = useState(null);
   const { token } = useCitizen();
-  const { confirm, ConfirmDialog } = useConfirm();
+  const { confirm: modalConfirm, error: modalError, success: modalSuccess } = useModal();
 
   const fetchOrgs = async () => {
     try {
@@ -36,6 +36,7 @@ export default function AdminOrganizations() {
       await axios.patch(`/api/v1/admin/organizations/${orgId}/verify`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      modalSuccess('Organization verified successfully.');
       fetchOrgs();
     } catch (err) {
       console.error('Verify failed:', err);
@@ -43,13 +44,19 @@ export default function AdminOrganizations() {
   };
 
   const handleDelete = async (orgId) => {
-    const ok = await confirm('Are you sure you want to delete this organization? This will also delete the linked user account.');
+    const ok = await modalConfirm({
+      title: 'Delete Organization',
+      message: 'Are you sure you want to delete this organization? This will also delete the linked user account.',
+      isDestructive: true,
+      confirmText: 'Delete Organization',
+    });
     if (!ok) return;
     try {
       await axios.delete(`/api/v1/admin/organizations/${orgId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (reviewOrg?._id === orgId) setReviewOrg(null);
+      modalSuccess('Organization deleted successfully.');
       fetchOrgs();
     } catch (err) {
       console.error('Delete failed:', err);
@@ -239,8 +246,6 @@ export default function AdminOrganizations() {
           </div>
         )}
       </AnimatePresence>
-
-      <ConfirmDialog />
     </div>
   );
 }

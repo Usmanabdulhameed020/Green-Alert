@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Search,
   Grid,
   List,
   MapPin,
   Calendar,
-  AlertCircle,
   Bookmark,
   Trash2,
   ChevronDown,
 } from 'lucide-react';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useSocket } from '../../contexts/SocketContext';
-import { useConfirm } from '../../components/ui/ConfirmModal';
+import { useModal } from '../../contexts/ModalContext';
 import StatusBadge from '../../components/ui/StatusBadge';
 import EmptyState from '../../components/ui/EmptyState';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
@@ -22,21 +20,21 @@ import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?q=80&w=600&auto=format&fit=crop';
 
 export default function MyReports() {
-  const { reports, savedReports, toggleSaveReport, deleteReport, isLoading, setReports } = useCitizen();
-  const { confirm, ConfirmDialog } = useConfirm();
-  const { on } = useSocket();
+  const { reports, savedReports, toggleSaveReport, deleteReport, isLoading } = useCitizen();
+  const { confirm: modalConfirm } = useModal();
   const navigate = useNavigate();
 
-  // Real-time report updates
-  useEffect(() => {
-    const offStatus = on('report:status-changed', (updatedReport) => {
-      setReports((prev) => prev.map((r) => (r._id === updatedReport._id ? updatedReport : r)));
+  const handleConfirmDelete = async (id) => {
+    const ok = await modalConfirm({
+      title: 'Delete Report',
+      message: 'Are you sure you want to delete this incident report? This action cannot be reversed.',
+      isDestructive: true,
+      confirmText: 'Delete Report',
     });
-    const offAssigned = on('report:assigned', (updatedReport) => {
-      setReports((prev) => prev.map((r) => (r._id === updatedReport._id ? updatedReport : r)));
-    });
-    return () => { offStatus(); offAssigned(); };
-  }, [on, setReports]);
+    if (ok) {
+      deleteReport(id);
+    }
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -240,13 +238,9 @@ export default function MyReports() {
                     </span>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={async (e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
-                          const ok = await confirm('Are you sure you want to delete this report?');
-                          if (!ok) return;
-                          try {
-                            await deleteReport(report.id || report._id);
-                          } catch {}
+                          handleConfirmDelete(report.id || report._id);
                         }}
                         className="p-1.5 rounded-full backdrop-blur-md shadow-sm border bg-rose-500/20 text-rose-400 border-rose-500/20 hover:bg-rose-500/40 transition-all cursor-pointer"
                       >
@@ -300,7 +294,7 @@ export default function MyReports() {
                         onClick={() => navigate(`/citizen-dashboard/reports/${report.id || report._id}`)}
                         className="text-xs font-bold text-emerald-600 hover:text-emerald-500 cursor-pointer"
                       >
-                        View Details →
+                        View Details ?
                       </button>
                     </div>
                   </div>
@@ -353,12 +347,8 @@ export default function MyReports() {
                       </td>
                       <td className="p-5 text-right space-x-2.5">
                         <button
-                          onClick={async () => {
-                            const ok = await confirm('Are you sure you want to delete this report?');
-                            if (!ok) return;
-                            try {
-                              await deleteReport(report.id || report._id);
-                            } catch {}
+                          onClick={() => {
+                            handleConfirmDelete(report.id || report._id);
                           }}
                           className="p-2 rounded-xl border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-400 transition-colors cursor-pointer inline-flex items-center justify-center"
                         >
@@ -400,7 +390,6 @@ export default function MyReports() {
           </button>
         </div>
       )}
-      <ConfirmDialog />
     </motion.div>
   );
 }

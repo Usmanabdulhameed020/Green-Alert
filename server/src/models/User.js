@@ -31,10 +31,6 @@ const userSchema = new mongoose.Schema(
       enum: ['citizen', 'agency', 'admin'],
       default: 'citizen',
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
     avatar: {
       type: String,
       default: '',
@@ -42,20 +38,6 @@ const userSchema = new mongoose.Schema(
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
-    },
-    passwordChangeCode: {
-      type: String,
-      default: '',
-    },
-    passwordChangeCodeExpires: {
-      type: Date,
-    },
-    emailVerificationCode: {
-      type: String,
-      default: '',
-    },
-    emailVerificationCodeExpires: {
-      type: Date,
     },
     status: {
       type: String,
@@ -73,30 +55,20 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
-    xp: {
-      type: Number,
-      default: 120,
-    },
-    unlockedAchievements: {
-      type: [String],
-      default: [],
-    },
     settings: {
       emailNotif: { type: Boolean, default: true },
       statusUpdates: { type: Boolean, default: true },
-      weeklyDigest: { type: Boolean, default: true },
       publicReports: { type: Boolean, default: true },
       allowContact: { type: Boolean, default: true },
       language: { type: String, default: 'English' },
       defaultCategory: { type: String, default: 'Illegal Dumping' },
-      newUserAlerts: { type: Boolean, default: true },
-      newOrgAlerts: { type: Boolean, default: true },
-      reportAssignedNotif: { type: Boolean, default: true },
+      weeklyDigest: { type: Boolean, default: true },
     },
   },
   { timestamps: true }
 );
 
+// Hash the password before saving
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 12;

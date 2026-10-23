@@ -1,9 +1,8 @@
+﻿import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Filter, ChevronDown, Building2, User, MapPin, Clock, Eye } from 'lucide-react';
+import { Search, Building2, User, MapPin, Eye } from 'lucide-react';
 import axios from 'axios';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useSocket } from '../../contexts/SocketContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminReports() {
@@ -14,7 +13,6 @@ export default function AdminReports() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [assignModal, setAssignModal] = useState(null);
   const { token } = useCitizen();
-  const { on } = useSocket();
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -33,21 +31,6 @@ export default function AdminReports() {
   };
 
   useEffect(() => { fetchData(); }, [token]);
-
-  // Real-time updates
-  useEffect(() => {
-    if (!on) return;
-    const offAssigned = on('report:assigned', (updatedReport) => {
-      setReports((prev) => prev.map((r) => (r._id === updatedReport._id ? updatedReport : r)));
-    });
-    const offStatus = on('report:status-changed', (updatedReport) => {
-      setReports((prev) => prev.map((r) => (r._id === updatedReport._id ? updatedReport : r)));
-    });
-    const offCreated = on('report:new', (newReport) => {
-      setReports((prev) => [newReport, ...prev]);
-    });
-    return () => { offAssigned(); offStatus(); offCreated(); };
-  }, [on]);
 
   const handleAssign = async (reportId, orgId) => {
     try {

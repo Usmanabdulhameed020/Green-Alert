@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+﻿import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   PlusCircle,
   FileSearch,
   Map,
-  Bell,
+  Search,
   TrendingUp,
   AlertCircle,
   CheckCircle,
@@ -19,15 +19,6 @@ import StatusBadge from '../../components/ui/StatusBadge';
 import EmptyState from '../../components/ui/EmptyState';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 import TiltCard from '../../components/ui/TiltCard';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 
 // Animated Counter helper
 const AnimatedNumber = ({ value }) => {
@@ -183,11 +174,11 @@ export default function DashboardHome() {
               path: '/citizen-dashboard/map',
             },
             {
-              title: 'Notifications',
-              desc: 'Check recent updates and notes',
-              icon: Bell,
+              title: 'Explore Reports',
+              desc: 'Browse public environmental reports',
+              icon: Search,
               color: 'text-amber-600 bg-amber-50 border-amber-100 hover:border-amber-200',
-              path: '/citizen-dashboard/notifications',
+              path: '/citizen-dashboard/explore',
             },
           ].map((action, idx) => {
             const Icon = action.icon;
@@ -257,22 +248,21 @@ export default function DashboardHome() {
               Live Feed
             </div>
           </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorReports" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ borderRadius: '12px', borderColor: '#e2e8f0' }} />
-                <Area type="monotone" dataKey="Reports" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorReports)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-64 w-full flex items-end gap-3 sm:gap-4 px-1">
+            {(() => {
+              const max = Math.max(1, ...chartData.map((d) => d.Reports));
+              return chartData.map((d) => (
+                <div key={d.name} className="flex-1 flex flex-col items-center justify-end h-full gap-2">
+                  <span className="text-[11px] font-bold text-slate-600">{d.Reports}</span>
+                  <div
+                    className="w-full rounded-t-lg bg-gradient-to-t from-emerald-500 to-emerald-300 transition-all"
+                    style={{ height: `${(d.Reports / max) * 100 || 2}%`, minHeight: '4px' }}
+                    title={`${d.Reports} reports in ${d.name}`}
+                  />
+                  <span className="text-[11px] font-semibold text-slate-400">{d.name}</span>
+                </div>
+              ));
+            })()}
           </div>
         </div>
 
@@ -325,7 +315,7 @@ export default function DashboardHome() {
             actionPath="/citizen-dashboard/create-report"
           />
         ) : (
-          <div className="divide-y divide-slate-150">
+          <div className="divide-y divide-slate-100">
             {reports.slice(0, 5).map((report) => (
               <div
                 key={report.id || report._id}

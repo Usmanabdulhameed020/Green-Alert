@@ -1,12 +1,10 @@
+﻿import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, X, MapPin, Navigation } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useSocket } from '../../contexts/SocketContext';
 import MapLibreMap from '../../components/map/MapLibreMap';
 import { MapSearchBar, LocateMeButton } from '../../components/map/MapControls';
-import StatusBadge from '../../components/ui/StatusBadge';
 
 const CATEGORIES = ['Air Quality', 'Water', 'Waste', 'Noise', 'Deforestation', 'Biodiversity', 'Other'];
 
@@ -42,7 +40,6 @@ function computeHotspotPairs(reports, maxKm = 8, maxPairs = 12) {
 export default function MapPage() {
   const navigate = useNavigate();
   const { allReports, fetchAllReports } = useCitizen();
-  const { on } = useSocket();
   const mapRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -53,24 +50,6 @@ export default function MapPage() {
   useEffect(() => {
     fetchAllReports();
   }, []);
-
-  // ── Living Map: react to live socket events with sonar pulses ──
-  const [pulses, setPulses] = useState([]);
-
-  const triggerPulse = useCallback((id, color = '#059669') => {
-    if (!id) return;
-    setPulses((prev) => [...prev, { id, color }]);
-    setTimeout(() => {
-      setPulses((prev) => prev.filter((x) => x.id !== id));
-    }, 2400);
-  }, []);
-
-  useEffect(() => {
-    const offNew = on('report:new', (r) => triggerPulse(r._id || r.id, '#059669'));
-    const offAssigned = on('report:assigned', (r) => triggerPulse(r._id || r.id, '#3b82f6'));
-    const offStatus = on('report:status-changed', (r) => triggerPulse(r._id || r.id, '#f59e0b'));
-    return () => { offNew(); offAssigned(); offStatus(); };
-  }, [on, triggerPulse]);
 
   const filteredReports = useMemo(() => {
     let list = allReports.filter(r => r.latitude && r.longitude);
@@ -117,14 +96,11 @@ export default function MapPage() {
   const markers = useMemo(() => {
     return filteredReports.map(r => {
       const reportId = r._id || r.id;
-      const activePulse = pulses.find((p) => p.id === reportId);
       return {
         id: reportId,
         lng: r.longitude,
         lat: r.latitude,
         color: '#059669',
-        pulse: !!activePulse,
-        pulseColor: activePulse?.color || '#059669',
         popupHtml: `
         <div style="font-family: system-ui, sans-serif; max-width: 240px; padding: 4px;">
           <h4 style="margin: 0 0 4px; font-size: 13px; font-weight: 800; color: #1e293b; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
@@ -145,7 +121,7 @@ export default function MapPage() {
       `,
       };
     });
-  }, [filteredReports, pulses]);
+  }, [filteredReports]);
 
   const handleLocated = useCallback((lng, lat) => {
     const map = mapRef.current || mapInstance();
@@ -193,6 +169,7 @@ export default function MapPage() {
         fitBoundsToMarkers={true}
         showControls={true}
         onMapLoad={() => setMapReady(true)}
+        onMarkerClick={handleMarkerClick}
         className="w-full h-full min-h-[500px]"
       >
         {/* Radar sweep overlay */}

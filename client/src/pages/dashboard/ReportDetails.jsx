@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -9,22 +9,14 @@ import {
   Clock,
   Building,
   CheckCircle,
-  FileText,
 } from 'lucide-react';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useConfirm } from '../../components/ui/ConfirmModal';
-import axios from 'axios';
+import { useModal } from '../../contexts/ModalContext';
 import SEO from '../../components/SEO';
-import DiscussionSection from '../../components/ui/DiscussionSection';
-import ShareButton from '../../components/ui/ShareButton';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?q=80&w=1200&auto=format&fit=crop';
-import StatusBadge from '../../components/ui/StatusBadge';
 import LoadingSkeleton from '../../components/ui/LoadingSkeleton';
 import ErrorState from '../../components/ui/ErrorState';
-import BeforeAfterSlider from '../../components/ui/BeforeAfterSlider';
-import PDFReportGenerator from '../../components/ui/PDFReportGenerator';
-import LeafBurst from '../../components/ui/LeafBurst';
 
 const workflowStatuses = [
   'Submitted',
@@ -73,14 +65,12 @@ function buildWavePath(width = 32, height = EKG_HEIGHT, amp = 7) {
 export default function ReportDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getReportDetails, savedReports, toggleSaveReport, deleteReport, addComment } = useCitizen();
-  const { confirm, ConfirmDialog } = useConfirm();
-  
+  const { getReportDetails, savedReports, toggleSaveReport, deleteReport } = useCitizen();
+  const { confirm: modalConfirm } = useModal();
+
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [commentText, setCommentText] = useState('');
-  const [submittingComment, setSubmittingComment] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(-1);
 
   const loadReport = async () => {
@@ -93,7 +83,7 @@ export default function ReportDetails() {
       } else {
         setReport(data);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load report details');
     } finally {
       setLoading(false);
@@ -104,38 +94,9 @@ export default function ReportDetails() {
     loadReport();
   }, [id]);
 
-
   const handleBookmarkToggle = () => {
     if (report) {
       toggleSaveReport(report.id || report._id);
-    }
-  };
-
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!commentText.trim() || !report) return;
-
-    setSubmittingComment(true);
-    try {
-      await addComment(report.id || report._id, commentText);
-      setCommentText('');
-      // Reload report details to reflect the new comment
-      await loadReport();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSubmittingComment(false);
-    }
-  };
-
-  const handleExportPDF = () => {
-    const container = document.getElementById('report-content');
-    if (container) {
-      container.classList.add('print-report');
-    }
-    window.print();
-    if (container) {
-      container.classList.remove('print-report');
     }
   };
 
@@ -146,10 +107,6 @@ export default function ReportDetails() {
   const currentStatusIndex = workflowStatuses.indexOf(report.status);
   const isResolved = report.status === 'Resolved' || report.status === 'Closed';
   const progressCutY = Math.max(0, currentStatusIndex) / (workflowStatuses.length - 1) * EKG_HEIGHT;
-
-  // Fallback coordinates for Lagos if missing
-  const lat = report.latitude || 6.5244;
-  const lng = report.longitude || 3.3792;
 
   return (
     <div className="space-y-6 pb-12">
@@ -176,16 +133,17 @@ export default function ReportDetails() {
           >
             <Bookmark className="h-5 w-5" fill={isSaved ? 'currentColor' : 'none'} />
           </button>
-          <ShareButton reportId={report.id || report._id} reportTitle={report.title} />
-          <PDFReportGenerator report={report} />
           <button
             onClick={async () => {
-              const ok = await confirm('Are you sure you want to delete this report?');
+              const ok = await modalConfirm({
+                title: 'Delete Report',
+                message: 'Are you sure you want to delete this report? This action cannot be undone.',
+                isDestructive: true,
+                confirmText: 'Delete Report',
+              });
               if (!ok) return;
-              try {
-                await deleteReport(report.id || report._id);
-                navigate('/citizen-dashboard/my-reports');
-              } catch {}
+              deleteReport(report.id || report._id);
+              navigate('/citizen-dashboard/my-reports');
             }}
             className="p-2.5 bg-white hover:bg-rose-50 border border-slate-200 text-slate-500 hover:text-rose-600 rounded-xl transition-colors cursor-pointer shadow-sm"
             title="Delete Report"
@@ -197,30 +155,54 @@ export default function ReportDetails() {
 
       {/* Main Grid Detail Page Layout */}
       <div id="report-content" className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Column - Image, Details, Maps */}
         <div className="lg:col-span-2 space-y-8">
 
-          {/* Before & After Slider for Resolved Reports */}
+          {/* Resolution evidence for Resolved Reports */}
           {report.resolutionImages?.length > 0 && (
-            <BeforeAfterSlider
-              beforeImage={report.imageUrl || report.images?.[0]}
-              afterImage={report.resolutionImages[0]}
-              resolutionNotes={report.resolutionNotes}
-              resolvedAt={report.resolvedAt}
-              agencyName={report.assignedTo?.name}
-            />
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-emerald-600" />
+                  Resolution Evidence
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 px-1">Before</p>
+                  <img
+                    src={report.imageUrl || report.images?.[0] || FALLBACK_IMAGE}
+                    alt="Before"
+                    onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
+                    className="h-52 w-full object-cover rounded-xl"
+                  />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-2 px-1">After</p>
+                  <img
+                    src={report.resolutionImages[0]}
+                    alt="After"
+                    onError={(e) => { e.target.src = FALLBACK_IMAGE; }}
+                    className="h-52 w-full object-cover rounded-xl"
+                  />
+                </div>
+              </div>
+              {report.resolutionNotes && (
+                <p className="px-6 pb-6 text-sm text-slate-600 leading-relaxed">{report.resolutionNotes}</p>
+              )}
+            </div>
           )}
-          
+
           {/* Main Card */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             {/* Incident Image / Gallery */}
             {(() => {
-              const allMedia = (report.images && report.images.length > 0) 
-                ? report.images 
+              const allMedia = (report.images && report.images.length > 0)
+                ? report.images
                 : (report.imageUrl ? [report.imageUrl] : []);
               const hasMedia = allMedia.length > 0;
-              
+
               return hasMedia ? (
                 <div className="space-y-2">
                   {/* Main large image */}
@@ -325,16 +307,16 @@ export default function ReportDetails() {
           </div>
         </div>
 
-        {/* Right Column - Status Flow, Comments, Responders */}
+        {/* Right Column - Status Flow, Responders */}
         <div className="space-y-6">
-          
+
           {/* Status Tracker */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-6">
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
               <Clock className="h-5 w-5 text-emerald-600" />
               Progress Workflow
             </h3>
-            
+
             {/* Vertical Progress Timeline with EKG heartbeat connector */}
             <div className="relative pl-8 ml-3.5">
               {/* EKG connector */}
@@ -354,18 +336,10 @@ export default function ReportDetails() {
                 </svg>
               </div>
 
-              {/* Healing leaf burst when resolved */}
-              {isResolved && (
-                <div className="absolute bottom-1 left-0 right-0 h-20 z-10">
-                  <LeafBurst fire count={16} size="sm" />
-                </div>
-              )}
-
               <div className="relative space-y-6">
                 {workflowStatuses.map((status, index) => {
                   const isCompleted = index < currentStatusIndex;
                   const isCurrent = index === currentStatusIndex;
-                  const isFuture = index > currentStatusIndex;
 
                   return (
                     <div key={status} className="relative">
@@ -407,8 +381,6 @@ export default function ReportDetails() {
             </div>
           </div>
 
-
-
           {/* Assigned responder Agency */}
           {report.assignedTo && (
             <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex items-center gap-4">
@@ -422,19 +394,13 @@ export default function ReportDetails() {
               </div>
             </div>
           )}
-
-          {/* Comments Section */}
-          <div className="no-print">
-            <DiscussionSection reportId={id} />
-          </div>
         </div>
       </div>
-      <ConfirmDialog />
 
       {/* Lightbox */}
       {lightboxIndex >= 0 && (() => {
-        const allMedia = (report.images && report.images.length > 0) 
-          ? report.images 
+        const allMedia = (report.images && report.images.length > 0)
+          ? report.images
           : (report.imageUrl ? [report.imageUrl] : []);
         const isVideo = allMedia[lightboxIndex]?.includes('.mp4') || allMedia[lightboxIndex]?.includes('.mov') || allMedia[lightboxIndex]?.includes('video');
         return (

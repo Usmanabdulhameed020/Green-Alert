@@ -1,16 +1,12 @@
+﻿import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   ArrowLeft, MapPin, Calendar, Clock, User, Building2,
-  Tag, AlertTriangle, CheckCircle, BrainCircuit, Sparkles,
-  X, Image as ImageIcon, FileText,
+  CheckCircle, X, FileText,
 } from 'lucide-react';
 import axios from 'axios';
 import { useCitizen } from '../../contexts/CitizenContext';
-import DiscussionSection from '../../components/ui/DiscussionSection';
-import BeforeAfterSlider from '../../components/ui/BeforeAfterSlider';
-import PDFReportGenerator from '../../components/ui/PDFReportGenerator';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?q=80&w=1200&auto=format&fit=crop';
 
@@ -51,7 +47,7 @@ export default function AdminReportDetails() {
     try {
       const { data } = await axios.get(`/api/v1/admin/reports/${id}`, { headers });
       setReport(data);
-    } catch (err) {
+    } catch {
       // fallback to generic report endpoint
       try {
         const { data } = await axios.get(`/api/v1/reports/${id}`, { headers });
@@ -68,7 +64,9 @@ export default function AdminReportDetails() {
     try {
       const { data } = await axios.get('/api/v1/admin/organizations', { headers });
       setOrganizations(data);
-    } catch {}
+    } catch {
+      // organization list is optional
+    }
   };
 
   useEffect(() => {
@@ -111,8 +109,6 @@ export default function AdminReportDetails() {
   }
 
   const currentStatusIndex = workflowStatuses.indexOf(report.status);
-  const lat = report.latitude || 6.5244;
-  const lng = report.longitude || 3.3792;
 
   return (
     <div className="space-y-6 pb-12">
@@ -126,7 +122,6 @@ export default function AdminReportDetails() {
           Back to Reports
         </button>
         <div className="flex items-center gap-2">
-          <PDFReportGenerator report={report} />
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Admin View</span>
         </div>
       </div>
@@ -137,15 +132,29 @@ export default function AdminReportDetails() {
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* Before & After Slider for Resolved Reports */}
+          {/* Resolution evidence */}
           {report.resolutionImages?.length > 0 && (
-            <BeforeAfterSlider
-              beforeImage={report.imageUrl || report.images?.[0]}
-              afterImage={report.resolutionImages[0]}
-              resolutionNotes={report.resolutionNotes}
-              resolvedAt={report.resolvedAt}
-              agencyName={report.assignedTo?.name}
-            />
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  Resolution Evidence
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 px-1">Before</p>
+                  <img src={report.imageUrl || report.images?.[0] || FALLBACK_IMAGE} alt="Before" onError={(e) => { e.target.src = FALLBACK_IMAGE; }} className="h-52 w-full object-cover rounded-xl" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-2 px-1">After</p>
+                  <img src={report.resolutionImages[0]} alt="After" onError={(e) => { e.target.src = FALLBACK_IMAGE; }} className="h-52 w-full object-cover rounded-xl" />
+                </div>
+              </div>
+              {report.resolutionNotes && (
+                <p className="px-6 pb-6 text-sm text-slate-600 leading-relaxed">{report.resolutionNotes}</p>
+              )}
+            </div>
           )}
 
           {/* Main Card */}
@@ -300,8 +309,6 @@ export default function AdminReportDetails() {
               )}
             </div>
           </motion.div>
-          
-          <DiscussionSection reportId={id} />
         </div>
 
         {/* Right Column */}
@@ -372,75 +379,6 @@ export default function AdminReportDetails() {
               </div>
             </div>
           </motion.div>
-
-          {/* AI Analysis */}
-          {report.aiAnalyzed && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.12 }}
-              className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4"
-            >
-              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                <BrainCircuit className="h-4 w-4 text-emerald-600" />
-                AI Analysis
-              </h3>
-
-              <div className="space-y-3">
-                {report.aiCategory && report.aiCategory !== report.category && (
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suggested Category</p>
-                      <p className="text-xs font-bold text-slate-700">{report.aiCategory}</p>
-                    </div>
-                  </div>
-                )}
-                {report.aiSummary && (
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Summary</p>
-                      <p className="text-xs text-slate-600 leading-relaxed">{report.aiSummary}</p>
-                    </div>
-                  </div>
-                )}
-                {report.aiSeverity && (
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${
-                      report.aiSeverity === 'Critical' ? 'text-rose-500' :
-                      report.aiSeverity === 'High' ? 'text-orange-500' :
-                      report.aiSeverity === 'Medium' ? 'text-yellow-500' : 'text-slate-400'
-                    }`} />
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Severity Assessment</p>
-                      <p className="text-xs font-bold text-slate-700">{report.aiSeverity}</p>
-                    </div>
-                  </div>
-                )}
-                {report.aiSuggestedOrg && (
-                  <div className="flex items-start gap-2">
-                    <Building2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suggested Agency</p>
-                      <p className="text-xs font-bold text-slate-700">{report.aiSuggestedOrg}</p>
-                    </div>
-                  </div>
-                )}
-                {report.aiDuplicateOf && (
-                  <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                    <X className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Potential Duplicate</p>
-                      <p className="text-xs text-amber-800 font-semibold">
-                        Similar to: "{report.aiDuplicateOf.title}" — {report.aiDuplicateOf.location}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
         </div>
       </div>
 

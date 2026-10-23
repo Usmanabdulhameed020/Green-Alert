@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
-  ShieldAlert,
   ArrowLeft,
   ArrowRight,
   Upload,
@@ -18,8 +17,7 @@ import {
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import { useCitizen } from '../../contexts/CitizenContext';
-import AlertModal from '../../components/ui/AlertModal';
-import LeafBurst from '../../components/ui/LeafBurst';
+import { useModal } from '../../contexts/ModalContext';
 import axios from 'axios';
 
 const steps = [
@@ -53,6 +51,7 @@ const severityConfig = [
 export default function CreateReport() {
   const navigate = useNavigate();
   const { createReport } = useCitizen();
+  const { warning: modalWarning, error: modalError, confirm: modalConfirm } = useModal();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -70,9 +69,7 @@ export default function CreateReport() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newReportId, setNewReportId] = useState(null);
-  const [alertMsg, setAlertMsg] = useState('');
   const [lightboxIndex, setLightboxIndex] = useState(-1);
-  const [lightboxType, setLightboxType] = useState('image');
 
   const hasChanges = formData.category || formData.title || formData.description || formData.images.length > 0 || formData.priority;
 
@@ -85,8 +82,15 @@ export default function CreateReport() {
 
   useEffect(() => {
     if (!hasChanges) return;
-    const handler = () => {
-      if (!window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
+    const handler = async () => {
+      const ok = await modalConfirm({
+        title: 'Unsaved Changes',
+        message: 'You have unsaved report changes. Are you sure you want to leave?',
+        confirmText: 'Leave',
+        cancelText: 'Stay',
+        type: 'warning',
+      });
+      if (!ok) {
         window.history.pushState(null, '', window.location.href);
       }
     };
@@ -95,8 +99,6 @@ export default function CreateReport() {
   }, [hasChanges]);
 
   const [searching, setSearching] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
-  const [inputFocused, setInputFocused] = useState(false);
   const searchTimer = useRef(null);
 
   // Robust multi-pass fallback geocoder: strips house numbers and specific street names if missing in OpenStreetMap, navigating to nearest area/neighborhood/city
@@ -135,7 +137,7 @@ export default function CreateReport() {
         if (Array.isArray(data) && data.length > 0) {
           return { data, queryUsed: query };
         }
-      } catch (e) {
+      } catch {
         // continue to next fallback candidate
       }
     }
@@ -144,10 +146,7 @@ export default function CreateReport() {
 
   useEffect(() => {
     const address = formData.location?.trim();
-    if (!address || address.length < 3) {
-      setSuggestions([]);
-      return;
-    }
+    if (!address || address.length < 3) return;
 
     clearTimeout(searchTimer.current);
     setSearching(true);
@@ -155,18 +154,15 @@ export default function CreateReport() {
       try {
         const result = await fetchGeocodeWithFallback(address);
         if (result && result.data.length > 0) {
-          setSuggestions(result.data);
           const top = result.data[0];
           setFormData(prev => ({
             ...prev,
             latitude: parseFloat(top.lat),
             longitude: parseFloat(top.lon),
           }));
-        } else {
-          setSuggestions([]);
         }
       } catch {
-        setSuggestions([]);
+        // ignore geocoding failures
       } finally {
         setSearching(false);
       }
@@ -194,17 +190,6 @@ export default function CreateReport() {
     } finally {
       setSearching(false);
     }
-  };
-
-  const handleSuggestion = (item) => {
-    setSuggestions([]);
-    setInputFocused(false);
-    setFormData(prev => ({
-      ...prev,
-      location: item.display_name,
-      latitude: parseFloat(item.lat),
-      longitude: parseFloat(item.lon),
-    }));
   };
 
   const reverseGeocode = async (lat, lng) => {
@@ -268,7 +253,7 @@ export default function CreateReport() {
 
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setAlertMsg('Geolocation is not supported by your browser.');
+      modalWarning('Geolocation is not supported by your browser.', 'Location Unavailable');
       return;
     }
     setSearching(true);
@@ -283,7 +268,7 @@ export default function CreateReport() {
         if (error.code === 1) errorText = 'Location access was denied. Please allow location permissions in your browser.';
         else if (error.code === 2) errorText = 'Location information is unavailable.';
         else if (error.code === 3) errorText = 'Location request timed out.';
-        setAlertMsg(errorText);
+        modalError(errorText, 'Location Access Error');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
@@ -314,7 +299,7 @@ export default function CreateReport() {
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length + formData.images.length > 5) {
-      setAlertMsg('You can upload a maximum of 5 files.');
+      modalWarning('You can upload a maximum of 5 files.', 'Upload Limit Exceeded');
       return;
     }
 
@@ -412,7 +397,7 @@ export default function CreateReport() {
       });
     } catch (err) {
       console.error('Submission failed:', err);
-      setAlertMsg('Failed to log report. Please check details and try again.');
+      modalError('Failed to log report. Please check details and try again.', 'Submission Failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -767,14 +752,9 @@ export default function CreateReport() {
               </div>
             )}
 
-            {/* Step 7: Success Animation — Report Activation */}
+            {/* Step 7: Success Animation - Report Activation */}
             {currentStep === 6 && (
               <div className="relative text-center py-8 space-y-6 overflow-hidden">
-                {/* Leaf burst celebration */}
-                <div className="absolute inset-0 z-10">
-                  <LeafBurst fire count={18} size="md" />
-                </div>
-
                 <motion.div
                   initial={{ scale: 0, rotate: -30 }}
                   animate={{ scale: 1, rotate: 0 }}
@@ -896,8 +876,6 @@ export default function CreateReport() {
           </div>
         </div>
       )}
-
-      <AlertModal isOpen={!!alertMsg} message={alertMsg} onClose={() => setAlertMsg('')} />
     </div>
   );
 }

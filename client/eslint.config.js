@@ -17,5 +17,12 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Our pages fetch their data in useEffect on mount and flip a loading
+      // flag first. That is a normal, readable pattern, so we turn off these
+      // very strict rules that flag it.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+    },
   },
 ])

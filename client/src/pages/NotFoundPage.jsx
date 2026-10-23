@@ -1,6 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Home, AlertTriangle } from 'lucide-react';
 
 export default function NotFoundPage() {

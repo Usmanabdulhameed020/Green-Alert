@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const logger = require('../utils/logger');
 
 /**
  * Establishes a connection to MongoDB Atlas
@@ -16,10 +15,10 @@ const connectDB = async () => {
       connectTimeoutMS: 30000,
       socketTimeoutMS: 45000,
     });
-    logger.info('Database connected successfully.');
+    console.log('Database connected successfully.');
     return true;
   } catch (err) {
-    logger.error('Database connection failed:', err.message);
+    console.error('Database connection failed:', err.message);
     throw err;
   }
 };

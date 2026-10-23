@@ -1,27 +1,21 @@
+﻿import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   ClipboardList, Users, Building2, AlertTriangle, TrendingUp, Clock,
-  Search, CheckCircle, Ban, MapPin, User, Mail, Shield, Calendar,
-  Wrench, Megaphone, ToggleLeft, ToggleRight, Save,
+  CheckCircle, Ban, MapPin, User,
 } from 'lucide-react';
 import axios from 'axios';
-import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell, BarChart, Bar, Legend,
-} from 'recharts';
 import MapLibreMap from '../../components/map/MapLibreMap';
 import { useCitizen } from '../../contexts/CitizenContext';
-import { useSocket } from '../../contexts/SocketContext';
 
 const statCards = [
-  { label: 'Total Reports', key: 'totalReports', icon: ClipboardList, color: 'bg-emerald-500', textColor: 'text-emerald-600', bgLight: 'bg-emerald-50' },
-  { label: 'Pending Reports', key: 'pendingReports', icon: Clock, color: 'bg-amber-500', textColor: 'text-amber-600', bgLight: 'bg-amber-50' },
-  { label: 'Resolved Reports', key: 'resolvedReports', icon: AlertTriangle, color: 'bg-blue-500', textColor: 'text-blue-600', bgLight: 'bg-blue-50' },
-  { label: 'Total Users', key: 'totalUsers', icon: Users, color: 'bg-violet-500', textColor: 'text-violet-600', bgLight: 'bg-violet-50' },
-  { label: 'Organizations', key: 'totalOrganizations', icon: Building2, color: 'bg-sky-500', textColor: 'text-sky-600', bgLight: 'bg-sky-50' },
-  { label: 'Verified Orgs', key: 'verifiedOrganizations', icon: TrendingUp, color: 'bg-teal-500', textColor: 'text-teal-600', bgLight: 'bg-teal-50' },
+  { label: 'Total Reports', key: 'totalReports', icon: ClipboardList, textColor: 'text-emerald-600', bgLight: 'bg-emerald-50' },
+  { label: 'Pending Reports', key: 'pendingReports', icon: Clock, textColor: 'text-amber-600', bgLight: 'bg-amber-50' },
+  { label: 'Resolved Reports', key: 'resolvedReports', icon: CheckCircle, textColor: 'text-blue-600', bgLight: 'bg-blue-50' },
+  { label: 'Total Users', key: 'totalUsers', icon: Users, textColor: 'text-violet-600', bgLight: 'bg-violet-50' },
+  { label: 'Organizations', key: 'totalOrganizations', icon: Building2, textColor: 'text-sky-600', bgLight: 'bg-sky-50' },
+  { label: 'Verified Orgs', key: 'verifiedOrganizations', icon: TrendingUp, textColor: 'text-teal-600', bgLight: 'bg-teal-50' },
 ];
 
 const categoryColors = {
@@ -47,9 +41,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState(null);
   const { token } = useCitizen();
-  const { on } = useSocket();
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -67,78 +59,6 @@ export default function AdminDashboard() {
     fetchStats();
   }, [token]);
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const { data } = await axios.get('/api/v1/system/settings');
-        if (data.success) setSettings(data.data);
-      } catch (err) {
-        console.error('Failed to fetch settings:', err);
-      }
-    };
-    fetchSettings();
-  }, []);
-
-  const updateMaintenance = async () => {
-    try {
-      const { data } = await axios.patch('/api/v1/system/maintenance', {
-        maintenanceMode: !settings.maintenanceMode,
-        maintenanceMessage: settings.maintenanceMessage,
-      }, { headers });
-      if (data.success) setSettings(data.data);
-    } catch (err) {
-      console.error('Failed to update maintenance mode:', err);
-    }
-  };
-
-  const updateMaintenanceMessage = async (message) => {
-    setSettings(s => ({ ...s, maintenanceMessage: message }));
-    try {
-      await axios.patch('/api/v1/system/maintenance', {
-        maintenanceMode: settings.maintenanceMode,
-        maintenanceMessage: message,
-      }, { headers });
-    } catch (err) {
-      console.error('Failed to update maintenance message:', err);
-    }
-  };
-
-  const updateAnnouncement = async () => {
-    try {
-      const { data } = await axios.patch('/api/v1/system/announcement', {
-        announcementEnabled: !settings.announcementEnabled,
-        announcementMessage: settings.announcementMessage,
-      }, { headers });
-      if (data.success) setSettings(data.data);
-    } catch (err) {
-      console.error('Failed to update announcement:', err);
-    }
-  };
-
-  const updateAnnouncementMessage = async (message) => {
-    setSettings(s => ({ ...s, announcementMessage: message }));
-    try {
-      await axios.patch('/api/v1/system/announcement', {
-        announcementEnabled: settings.announcementEnabled,
-        announcementMessage: message,
-      }, { headers });
-    } catch (err) {
-      console.error('Failed to update announcement message:', err);
-    }
-  };
-
-  useEffect(() => {
-    const refresh = () => {
-      axios.get('/api/v1/admin/stats', { headers })
-        .then(({ data }) => setStats(data))
-        .catch(() => {});
-    };
-    const offStatus = on('report:status-changed', refresh);
-    const offAssigned = on('report:assigned', refresh);
-    const offNew = on('report:new', refresh);
-    return () => { offStatus(); offAssigned(); offNew(); };
-  }, [on, token]);
-
   const handleStatusChange = async (reportId, newStatus) => {
     try {
       await axios.patch(`/api/v1/reports/${reportId}/status`, { status: newStatus }, { headers });
@@ -154,6 +74,8 @@ export default function AdminDashboard() {
 
   const categoryData = Object.entries(stats.reportsByCategory || {}).map(([name, value]) => ({ name, value }));
   const priorityData = Object.entries(stats.reportsByPriority || {}).map(([name, value]) => ({ name, value }));
+  const maxCategory = Math.max(1, ...categoryData.map((d) => d.value));
+  const maxPriority = Math.max(1, ...priorityData.map((d) => d.value));
 
   return (
     <div className="space-y-6">
@@ -179,63 +101,6 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Settings Cards: Maintenance & Announcement */}
-      {settings && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Maintenance Mode */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Wrench className="h-4 w-4 text-amber-600" />
-                <h2 className="text-sm font-extrabold text-slate-800">Maintenance Mode</h2>
-              </div>
-              <button onClick={updateMaintenance} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${settings.maintenanceMode ? 'bg-amber-500' : 'bg-slate-300'}`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.maintenanceMode ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-            <p className="text-[11px] text-slate-500 mb-2">Message shown to non-admin users:</p>
-            <textarea
-              value={settings.maintenanceMessage}
-              onChange={(e) => updateMaintenanceMessage(e.target.value)}
-              rows={2}
-              className="w-full text-xs border border-slate-200 rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-amber-300"
-              placeholder="We are currently undergoing scheduled maintenance..."
-            />
-            <div className="flex items-center justify-between mt-2">
-              <span className={`text-[10px] font-bold ${settings.maintenanceMode ? 'text-amber-600' : 'text-slate-400'}`}>
-                {settings.maintenanceMode ? 'Active — non-admin users blocked' : 'Inactive'}
-              </span>
-            </div>
-          </div>
-
-          {/* Announcement Banner */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Megaphone className="h-4 w-4 text-blue-600" />
-                <h2 className="text-sm font-extrabold text-slate-800">Announcement Banner</h2>
-              </div>
-              <button onClick={updateAnnouncement} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${settings.announcementEnabled ? 'bg-blue-500' : 'bg-slate-300'}`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.announcementEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-            <p className="text-[11px] text-slate-500 mb-2">Banner message shown to all users:</p>
-            <textarea
-              value={settings.announcementMessage}
-              onChange={(e) => updateAnnouncementMessage(e.target.value)}
-              rows={2}
-              className="w-full text-xs border border-slate-200 rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
-              placeholder="Important announcement for all users..."
-            />
-            <div className="flex items-center justify-between mt-2">
-              <span className={`text-[10px] font-bold ${settings.announcementEnabled ? 'text-blue-600' : 'text-slate-400'}`}>
-                {settings.announcementEnabled ? 'Visible to all users' : 'Hidden'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Quick Action Widgets */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
@@ -258,64 +123,66 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Charts Row */}
+      {/* Breakdown Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Line Chart */}
-        {stats.reportsByMonth && stats.reportsByMonth.length > 0 && (
+        {/* By Category */}
+        {categoryData.length > 0 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports Over Time</h2>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.reportsByMonth}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="count" stroke="#059669" strokeWidth={2.5} dot={{ fill: '#059669', r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
+            <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports by Category</h2>
+            <div className="space-y-3">
+              {categoryData.map((d) => (
+                <div key={d.name} className="flex items-center gap-3">
+                  <span className="w-28 text-[11px] font-semibold text-slate-600 truncate">{d.name}</span>
+                  <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${(d.value / maxCategory) * 100}%`, backgroundColor: categoryColors[d.name] || '#94a3b8' }}
+                    />
+                  </div>
+                  <span className="w-6 text-right text-[11px] font-bold text-slate-700">{d.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Category Donut Chart */}
-        {categoryData.length > 0 && (
+        {/* By Priority */}
+        {priorityData.length > 0 && (
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-            <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports by Category</h2>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={categoryData} cx="50%" cy="50%" outerRadius={80} innerRadius={45} dataKey="value" nameKey="name" label={({ name, value }) => `${name}: ${value}`} labelLine={false}>
-                    {categoryData.map((entry) => (
-                      <Cell key={entry.name} fill={categoryColors[entry.name] || '#94a3b8'} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+            <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports by Priority</h2>
+            <div className="space-y-3">
+              {priorityData.map((d) => (
+                <div key={d.name} className="flex items-center gap-3">
+                  <span className="w-28 text-[11px] font-semibold text-slate-600">{d.name}</span>
+                  <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${(d.value / maxPriority) * 100}%`, backgroundColor: priorityColors[d.name] || '#94a3b8' }}
+                    />
+                  </div>
+                  <span className="w-6 text-right text-[11px] font-bold text-slate-700">{d.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
       </div>
 
-      {/* Priority Bar Chart */}
-      {priorityData.length > 0 && (
+      {/* Reports Over Time */}
+      {stats.reportsByMonth && stats.reportsByMonth.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-          <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports by Priority</h2>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={priorityData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" name="Reports">
-                  {priorityData.map((entry) => (
-                    <Cell key={entry.name} fill={priorityColors[entry.name] || '#94a3b8'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <h2 className="text-sm font-extrabold text-slate-800 mb-4">Reports Over Time</h2>
+          <div className="h-48 flex items-end gap-3">
+            {(() => {
+              const max = Math.max(1, ...stats.reportsByMonth.map((m) => m.count));
+              return stats.reportsByMonth.map((m) => (
+                <div key={m.month} className="flex-1 flex flex-col items-center justify-end h-full gap-2">
+                  <span className="text-[11px] font-bold text-slate-600">{m.count}</span>
+                  <div className="w-full rounded-t-lg bg-gradient-to-t from-emerald-500 to-emerald-300" style={{ height: `${(m.count / max) * 100 || 2}%`, minHeight: '4px' }} />
+                  <span className="text-[11px] font-semibold text-slate-400">{m.month}</span>
+                </div>
+              ));
+            })()}
           </div>
         </div>
       )}
@@ -416,7 +283,6 @@ export default function AdminDashboard() {
                 <p className="text-[11px] text-slate-500 truncate">{report.location} · {report.category}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-3">
-                {/* Priority Badge */}
                 {report.priority && (
                   <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-lg ${
                     report.priority === 'Critical' ? 'bg-red-50 text-red-700' :
@@ -425,7 +291,6 @@ export default function AdminDashboard() {
                     'bg-slate-100 text-slate-600'
                   }`}>{report.priority}</span>
                 )}
-                {/* Inline Status Select */}
                 <select
                   value={report.status}
                   onChange={(e) => handleStatusChange(report._id, e.target.value)}

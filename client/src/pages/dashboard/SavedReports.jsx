@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Bookmark,
   Search,
@@ -149,7 +149,7 @@ export default function SavedReports() {
                     onClick={() => navigate(`/citizen-dashboard/reports/${report.id || report._id}`)}
                     className="text-xs font-bold text-emerald-600 hover:text-emerald-500 cursor-pointer"
                   >
-                    View Details →
+                    View Details ?
                   </button>
                 </div>
               </div>
