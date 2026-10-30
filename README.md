@@ -326,8 +326,8 @@ All endpoints are versioned under `/api/v1`:
 
 On initial boot, GreenAlert automatically seeds a master administrator account:
 
-- **Email**: `admin@greenalert.com`
-- **Password**: `adminsecretpassword`
+- **Email**: `ad..........@gmail.com`
+- **Password**: `................`
 - **Role**: `admin`
 
 *(You can customize these credentials in your `server/.env` using `ADMIN_EMAIL` and `ADMIN_PASSWORD`)*

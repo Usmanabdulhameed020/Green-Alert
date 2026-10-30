@@ -43,6 +43,7 @@ const createSendToken = (user, statusCode, res, message) => {
   });
 };
 
+// Creating an account
 exports.register = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
@@ -168,6 +169,7 @@ exports.getMe = async (req, res) => {
   }
 };
 
+// Updating your profile
 exports.updateProfile = async (req, res) => {
   try {
     const { fullName, phone, avatar, settings } = req.body;
@@ -207,6 +209,7 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+//Deleting an account
 exports.deleteAccount = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -223,6 +226,7 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
+// Registration of organization
 exports.registerOrg = async (req, res) => {
   try {
     const { orgName, description, email, phone, address, website, category, licenseNumber, password } = req.body;
@@ -296,6 +300,7 @@ exports.registerOrg = async (req, res) => {
   }
 };
 
+// Changing of password
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;

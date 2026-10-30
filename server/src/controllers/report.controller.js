@@ -1,6 +1,6 @@
 const Report = require('../models/Report');
 
-// Get all reports across all users (for the Explore page)
+// Get all reports across all users for the Explore page
 exports.getAllReports = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
